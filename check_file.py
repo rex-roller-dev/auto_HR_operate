@@ -21,7 +21,9 @@ def wait_and_check_download_strict(
     return False, None
 
 if __name__ == "__main__":
-    DOWNLOAD_DIR = r"D:\D\file\auto_HR_operate"
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DOWNLOAD_DIR = os.path.join(BASE_DIR, "downloads")#保证和下载脚本目录一致
+
     ok, real_name = wait_and_check_download_strict(
     DOWNLOAD_DIR,
     "志愿深圳记录",
