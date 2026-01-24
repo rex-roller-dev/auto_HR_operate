@@ -118,5 +118,5 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
     driver.quit()
 
 if __name__ == "__main__":
-    download_file_from_wps(url="https://www.kdocs.cn/l/chgTYIgIr6o3",expected_name="志愿深圳记录",ext=".pdf")
-    download_file_from_wps(url="https://www.kdocs.cn/l/co4BlrgCtC3p",expected_name="认证表",ext=".pdf")
+    download_file_from_wps(url="https://www.kdocs.cn/l/ck0BBmRwjKyl",expected_name="志愿深圳",ext=".pdf")
+    download_file_from_wps(url="https://www.kdocs.cn/l/cpLuhzT78p6q",expected_name="认证表",ext=".docx")
