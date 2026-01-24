@@ -7,8 +7,35 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import os
 
+def wait_for_download(download_dir, expected_name, ext, timeout=60):
+    """
+    等待浏览器下载完成
 
-def download_file_from_wps(url: str):
+    参数说明：
+    - download_dir : 下载目录（浏览器的默认下载路径）
+    - expected_name: 期望的文件名关键字（不要写完整名，防止出现 (1)）
+    - ext          : 文件扩展名，例如 ".pdf"
+    - timeout      : 最大等待时间（秒）
+
+    返回值：
+    - (True, filename)  : 下载成功，返回真实文件名
+    - (False, None)     : 超时或下载失败
+    """
+    start = time.time()
+
+    while time.time() - start < timeout:
+        for f in os.listdir(download_dir):
+            # 下载完成：目标文件存在，且没有 .crdownload
+            if expected_name in f and f.lower().endswith(ext):
+                cr_tmp = f + ".crdownload"
+                if not os.path.exists(os.path.join(download_dir, cr_tmp)):
+                    return True, f
+
+        time.sleep(1)  # 每秒检查一次
+
+    return False, None
+
+def download_file_from_wps(url: str,expected_name: str,ext: str):
     # ===== 1️⃣ EdgeDriver 路径 =====
     EDGE_DRIVER_PATH = r".\msedgedriver.exe"
 
@@ -76,11 +103,20 @@ def download_file_from_wps(url: str):
         print("✅ 已点击【下载】按钮")
     except Exception as e:
         print("❌ 没找到下载按钮：", e)
-
-    # 给下载一点时间
-    time.sleep(15)
+    # ===== 等待下载完成 =====
+    success, filename = wait_for_download(
+    download_dir=DOWNLOAD_DIR,
+    expected_name=expected_name,
+    ext=ext,
+    timeout=60
+    )
+    if success:
+        print(f"✅ 文件下载成功：{filename}")
+    else:
+        print("❌ 文件下载失败")
 
     driver.quit()
 
 if __name__ == "__main__":
-    download_file_from_wps(url="https://www.kdocs.cn/l/chgTYIgIr6o3")
+    download_file_from_wps(url="https://www.kdocs.cn/l/chgTYIgIr6o3",expected_name="志愿深圳记录",ext=".pdf")
+    download_file_from_wps(url="https://www.kdocs.cn/l/co4BlrgCtC3p",expected_name="认证表",ext=".pdf")

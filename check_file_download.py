@@ -29,6 +29,11 @@ if __name__ == "__main__":
     "志愿深圳记录",
     ".pdf"
 )
+    ok, real_name = wait_and_check_download_strict(
+    DOWNLOAD_DIR,
+    "认证表",
+    ".pdf"
+)
     if ok:
         print(f"✅ 文件下载成功：{real_name}")
     else:
