@@ -34,8 +34,8 @@ def extract_text(file_path: str) -> str:
         raise ValueError(f"不支持的文件类型: {suffix}")
     
 if __name__ == "__main__":
-    pdf_path = r"D:\D\file\auto_HR_operate\downloads\张宁宁_深圳大学志愿时认证表.pdf"
     word_path = r"D:\D\file\auto_HR_operate\downloads\深圳大学志愿时认证表(67).docx"
+    pdf_path = r"D:\D\file\auto_HR_operate\downloads\志愿深圳工义详细表.pdf"
 
     pdf_text = extract_text(pdf_path)
     print("===== PDF 内容 =====")

@@ -64,7 +64,7 @@ def parse_date_flexible(date_str: str) -> Optional[str]:
 
 
 
-def parse_volunteer_docx(path: str) -> dict:
+def parse_volunteer(path: str) -> dict:
     text = extract_text(path)
     text = normalize_text(text)# 规范化文本
 
@@ -175,5 +175,5 @@ def parse_volunteer_docx(path: str) -> dict:
 
 if __name__ == "__main__":
     path = r"D:\D\file\auto_HR_operate\downloads\张宁宁_深圳大学志愿时认证表.pdf"
-    data = parse_volunteer_docx(path)
+    data = parse_volunteer(path)
     print(data)
