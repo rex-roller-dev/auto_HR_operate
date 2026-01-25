@@ -116,6 +116,9 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
         print("❌ 文件下载失败")
 
     driver.quit()
+    # ===== 返回下载的文件路径 =====
+    
+    return os.path.join(DOWNLOAD_DIR, filename) if success else None
 
 if __name__ == "__main__":
     download_file_from_wps(url="https://www.kdocs.cn/l/ck0BBmRwjKyl",expected_name="志愿深圳",ext=".pdf")
