@@ -121,5 +121,6 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
     return os.path.join(DOWNLOAD_DIR, filename) if success else None
 
 if __name__ == "__main__":
-    download_file_from_wps(url="https://www.kdocs.cn/l/ck0BBmRwjKyl",expected_name="志愿深圳",ext=".pdf")
-    download_file_from_wps(url="https://www.kdocs.cn/l/cpLuhzT78p6q",expected_name="认证表",ext=".docx")
+    #download_file_from_wps(url="https://www.kdocs.cn/l/ck0BBmRwjKyl",expected_name="志愿深圳",ext=".pdf")
+    address = download_file_from_wps(url="https://www.kdocs.cn/l/ck0BBmRwjKyl",expected_name="详细",ext=".pdf")
+    print(address)
