@@ -36,6 +36,16 @@ def wait_for_download(download_dir, expected_name, ext, timeout=60):
     return False, None
 
 def download_file_from_wps(url: str,expected_name: str,ext: str):
+    """
+    通过 Selenium 自动化下载 WPS 分享链接中的文件
+
+    :param url: WPS 分享链接
+    :type url: str
+    :param expected_name: 期望的文件名关键字（不要写完整名，防止出现 (1)）
+    :type expected_name: str
+    :param ext: 文件扩展名，例如 ".pdf"
+    :type ext: str
+    """
     # ===== 1️⃣ EdgeDriver 路径 =====
     EDGE_DRIVER_PATH = r".\msedgedriver.exe"
 
@@ -67,55 +77,70 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
     options.add_experimental_option("prefs", prefs)
 
     service = Service(EDGE_DRIVER_PATH)
+    while not success:
+        # ===== 启动浏览器（只启动一次！）=====
+        driver = webdriver.Edge(service=service, options=options)
 
-    # ===== 启动浏览器（只启动一次！）=====
-    driver = webdriver.Edge(service=service, options=options)
+        # ===== 打开 WPS 分享链接 =====
+        driver.get(url)
 
-    # ===== 打开 WPS 分享链接 =====
-    driver.get(url)
-
-    # ===== 等页面加载完成 =====
-    wait = WebDriverWait(driver, 30)
-    time.sleep(3)
-    try:
-        menu_btn = wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH,
-                "//button[contains(@class,'kd-button-icon') and .//i[contains(@class,'kd-icon-menu')]]")
+        # ===== 等页面加载完成 =====
+        wait = WebDriverWait(driver, 30)
+        time.sleep(3)
+        try:
+            menu_btn = wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH,
+                    "//button[contains(@class,'kd-button-icon') and .//i[contains(@class,'kd-icon-menu')]]")
+                )
             )
-        )
-        driver.execute_script("arguments[0].click();", menu_btn)
-        print("✅ 已点击 ☰ 菜单")
-    except Exception as e:
-        print("❌ 菜单按钮没找到：", e)
+            driver.execute_script("arguments[0].click();", menu_btn)
+            print("✅ 已点击 ☰ 菜单")
+        except Exception as e:
+            print("❌ 菜单按钮没找到：", e)
 
-    # 给菜单一点展开时间
-    time.sleep(1.5)
+        # 给菜单一点展开时间
+        time.sleep(5)
 
-    try:
-        # 等“下载”按钮出现
-        download_btn = wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, "//span[contains(text(),'下载')]")
+        try:
+            confirm_btn = wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//button[.//span[text()='确认登录'] or text()='确认登录']")
+                )
             )
-        )
-        download_btn.click()
-        print("✅ 已点击【下载】按钮")
-    except Exception as e:
-        print("❌ 没找到下载按钮：", e)
-    # ===== 等待下载完成 =====
-    success, filename = wait_for_download(
-    download_dir=DOWNLOAD_DIR,
-    expected_name=expected_name,
-    ext=ext,
-    timeout=60
-    )
-    if success:
-        print(f"✅ 文件下载成功：{filename}")
-    else:
-        print("❌ 文件下载失败")
+            driver.execute_script("arguments[0].click();", confirm_btn)
+            print("✅ 已点击【确认登录】按钮")
+        except Exception as e:
+            print("❌ 未找到【确认登录】按钮：", e)
 
-    driver.quit()
+        # 给菜单一点展开时间
+        time.sleep(5)
+
+        try:
+            # 等“下载”按钮出现
+            download_btn = wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//span[contains(text(),'下载')]")
+                )
+            )
+            download_btn.click()
+            print("✅ 已点击【下载】按钮")
+        except Exception as e:
+            print("❌ 没找到下载按钮：", e)
+        # ===== 等待下载完成 =====
+        success, filename = wait_for_download(
+        download_dir=DOWNLOAD_DIR,
+        expected_name=expected_name,
+        ext=ext,
+        timeout=60
+        )
+        if success:
+            print(f"✅ 文件下载成功：{filename}")
+        else:
+            print("❌ 文件下载失败")
+
+        driver.quit()
+        
     # ===== 返回下载的文件路径 =====
     
     return os.path.join(DOWNLOAD_DIR, filename) if success else None
