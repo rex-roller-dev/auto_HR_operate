@@ -16,6 +16,21 @@ def pdfclean(pos, page):
         datalist = re.split(r'[ \n]+', text)
         #print(datalist)
         return datalist
+    
+def pdfclean_all_pages(path):
+    """
+    读取 PDF 所有页，返回合并后的字符串列表
+    """
+    all_data = []
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text()
+            if not text:
+                continue
+            data = re.split(r'[ \n]+', text)
+            all_data.extend(data)
+    return all_data
+
 
 def is_valid_time_format(data):
     """
@@ -154,10 +169,10 @@ def sum_data(shortlist, base_year,base_month,base_date,finalyear,finalmonth,fina
         total_minutes += hours * 60 + minutes
     return total_minutes
 
-def total_service_hours(path : str, finalyear : int, base_year : int, base_month : int = 9, base_date : int = 1, finalmonth : int = 8, finalday : int = 31) -> float:
+def parse_ivolunteer(path : str, finalyear : int, base_year : int, base_month : int = 9, base_date : int = 1, finalmonth : int = 8, finalday : int = 31) -> float:
     """
-    total_service_hours 的 Docstring
-    
+    parse_ivolunteer 的 Docstring
+
     说明：计算指定 PDF 文件中在给定日期范围内的总志愿服务时长（小时）。
 
     :param path: PDF 文件路径
@@ -168,17 +183,17 @@ def total_service_hours(path : str, finalyear : int, base_year : int, base_month
     :param finalmonth: 最终月份
     :param finalday: 最终日期
     """
-    datalist = pdfclean(path, 0)
+    datalist = pdfclean_all_pages(path)
     shortlist = dataclean(datalist)
     total_minutes = sum_data(shortlist, base_year,base_month,base_date,finalyear,finalmonth,finalday)
     total_hours = total_minutes / 60
     return total_hours
 
 if __name__ == "__main__":
-    path = r"D:\D\file\auto_HR_operate\downloads\服务时间证书(9).pdf"
-    datalist = pdfclean(path, 0)
-    shortlist = dataclean(datalist)
-    total_minutes = sum_data(shortlist, 2021,1,1,2025,12,31)
-    total_hours = total_minutes / 60
-    total_hours = total_service_hours(path, 2021,1,1,2025,12,31)
+    path = r"D:\D\file\auto_HR_operate\downloads\i志愿-王佳豪.pdf"
+    # datalist = pdfclean(path, 0)
+    # shortlist = dataclean(datalist)
+    # total_minutes = sum_data(shortlist, 2021,1,1,2025,12,31)
+    # total_hours = total_minutes / 60
+    total_hours = parse_ivolunteer(path, 2024, 2019, 9, 1, 10, 9)
     print(f"总志愿时长：{total_hours} 小时")

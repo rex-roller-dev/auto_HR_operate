@@ -5,6 +5,8 @@ from email.header import Header
 from email.utils import formataddr
 from email import encoders
 from email.mime.base import MIMEBase
+from email.header import Header
+from email.utils import formataddr
 
 from email_config import (
     SMTP_SERVER,
@@ -16,6 +18,7 @@ from email_config import (
 
 def send_email(
     to_email: str,
+    to_name: str,
     subject: str,
     body: str,
     attachments: list[str] | None = None
@@ -23,14 +26,14 @@ def send_email(
 
     msg = EmailMessage()
 
-    # 发件人 / 收件人 / 主题
+    # 发件人 / 收件人 / 主题（直接传字符串）
     msg["From"] = formataddr((SENDER_NAME, SENDER_EMAIL))
-    msg["To"] = to_email
-    msg["Subject"] = subject   # ✅ 关键修复点
+    msg["To"] = formataddr((to_name, to_email))
+    msg["Subject"] = subject   # ✅ 不再用 Header()
 
     # 正文
     msg.set_content(body, charset="utf-8")
-
+    
     # 附件
     if attachments:
         for file_path in attachments:
@@ -52,7 +55,6 @@ def send_email(
     with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
-
 
 def find_stamped_pdf(download_dir: str = "downloads") -> Path:
     download_dir = Path(download_dir)
@@ -90,12 +92,216 @@ def send_success_email(to_email: str, name: str):
 
     send_email(
         to_email=to_email,
+        to_name=name,
         subject=subject,
         body=body,
         attachments=[str(stamped_pdf)]
     )
 
+def send_failure_email(to_email: str, name: str, exception: Exception):
+    """
+    发送志愿服务时长审核失败邮件，包含失败原因。
+
+    :param to_email: 收件人邮箱
+    :param name: 收件人姓名
+    :param exception: 审核失败或异常信息对象
+    """
+    subject = "志愿服务时长审核异常通知"
+    
+    # 将异常信息转换为字符串，方便邮件显示
+    error_msg = str(exception) if exception else "未知错误"
+    
+    body = f"""
+{name} 同学，您好：
+
+您的志愿服务时长审核未通过，出现以下异常情况：
+
+{error_msg}
+
+请核查提交信息或联系相关工作人员处理。
+"""
+    
+    send_email(
+        to_email=to_email,
+        to_name=name,
+        subject=subject,
+        body=body,
+        attachments=[]  # 失败邮件一般不附文件
+    )
+
+
 if __name__ == "__main__":
+    data = {
+"rid":"4qAUgDcoUY",
+"formId":"20260123201242397174053",
+"formTitle":"志愿时认证表审核申请（粤海校区）-2025—2026",
+"aid":"20260129221947070747904",
+"eventTs":1769696387000,
+"messageTs":1769696523619,
+"creatorId":"1794481838",
+"creatorName":"admin",
+"event":"create_answer",
+"version":2,
+"answerContents":[
+{
+"qid":"j4jodj",
+"type":"input",
+"title":"请输入姓名",
+"value":"王佳豪"
+},
+{
+"qid":"aiecak",
+"type":"select",
+"title":"请选择性别",
+"value":[
+"男"
+]
+},
+{
+"qid":"mb9vz5",
+"type":"select",
+"title":"您所在的校区",
+"value":[
+"粤海"
+]
+},
+{
+"qid":"m97otm",
+"type":"input",
+"title":"学号",
+"value":"2300474002"
+},
+{
+"qid":"8884so",
+"type":"input",
+"title":"学院",
+"value":"土木与交通工程学院"
+},
+{
+"qid":"egxtog",
+"type":"input",
+"title":"电子义工证注册号/义工证号",
+"value":"0099234732"
+},
+{
+"qid":"5fbh5l",
+"type":"input",
+"title":"请输入身份证号",
+"value":"441522200002201012"
+},
+{
+"qid":"pyci44",
+"type":"input",
+"title":"请输入联系方式",
+"value":"13428216169"
+},
+{
+"qid":"z5nkcu",
+"type":"email",
+"title":"电子邮箱",
+"value":"2039179148@qq.com"
+},
+{
+"qid":"93aewv",
+"type":"input",
+"title":"用途",
+"value":"入党"
+},
+{
+"qid":"vk7i5f",
+"type":"select",
+"title":"2024-2025学年是否有挂科记录",
+"value":[
+"否"
+]
+},
+{
+"qid":"uljvc0",
+"type":"input",
+"title":"是否重复申请",
+"value":"无"
+},
+{
+"qid":"shjlog",
+"type":"select",
+"title":"审核方式",
+"value":[
+"线下审核"
+]
+},
+{
+"qid":"wywm2a",
+"type":"input",
+"title":"备注",
+"value":"测试"
+},
+{
+"qid":"k6xep1",
+"type":"file",
+"title":"深圳大学志愿时认证表Word",
+"value":[
+{
+"fileName":"深圳大学志愿时认证表(42).docx",
+"fileShareLink":"https://www.kdocs.cn/l/cfN6wZ3wtlAL",
+"fileId":"490798112754",
+"fileSid":"cfN6wZ3wtlAL",
+"ext":"docx"
+}
+]
+},
+{
+"qid":"p2zrq9",
+"type":"file",
+"title":"广东省内志愿时服务证明（佐证材料）--志愿深圳部分",
+"value":[
+{
+"fileName":"志愿深圳-王佳豪.pdf",
+"fileShareLink":"https://www.kdocs.cn/l/ccLOxraJ3ZzG",
+"fileId":"490801341848",
+"fileSid":"ccLOxraJ3ZzG",
+"ext":"pdf"
+}
+]
+},
+{
+"qid":"tjbcap",
+"type":"file",
+"title":"广东省内志愿时服务证明（佐证材料）--i志愿部分",
+"value":[
+{
+"fileName":"i志愿-王佳豪.pdf",
+"fileShareLink":"https://www.kdocs.cn/l/caW59esJzbv9",
+"fileId":"490799665151",
+"fileSid":"caW59esJzbv9",
+"ext":"pdf"
+}
+]
+},
+{
+"qid":"lusa9s",
+"type":"select",
+"title":"广东省内志愿时--深大义工部分",
+"value":[
+"需要深大义工"
+]
+},
+{
+"qid":"swxlpy",
+"type":"multiStepInput",
+"title":"本科和研究生都是深大的同学请注意️",
+"value":[
+"2019093042"
+]
+},
+{
+"qid":"yfyzzw",
+"type":"file",
+"title":"附件二--补充佐证材料（相同无需重复上传）",
+"value":[]
+}
+]
+}
     send_success_email(
-        to_email="2039179148@qq.com",
-        name="测试用户")
+    to_email=data["answerContents"][8]["value"],
+    name=data["answerContents"][0]["value"],
+)

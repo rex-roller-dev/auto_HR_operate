@@ -135,10 +135,53 @@ def build_file_cells(links: list, max_count: int, prefix_name: str):
 def write_verify_result(
     form_data: dict,
     exception: Exception,
-    file_id: str,
     access_token: str,
+    file_id = "489000618255",
     TEXT_COLS = {4, 6, 7, 8, 26, 30}
 ) -> dict:
+    """
+    将志愿时认证表单的审核结果写入 WPS 表格指定工作表。
+
+    功能说明：
+    - 解析 WPS 表单回调数据，将题目答案转换为键值对；
+    - 获取目标表格的当前活动工作表及可写入区域；
+    - 在表格末尾新增一行，写入申请人基础信息、审核状态及附件链接；
+    - 根据字段类型自动区分文本单元格与链接单元格；
+    - 通过 WPS OpenAPI 批量写入单元格数据。
+
+    审核状态规则：
+    - 当 exception 为 None 时，状态写为“待人工审核”；
+    - 当 exception 不为 None 时，状态写为“异常：{异常信息}”。
+
+    参数：
+        form_data (dict):
+            WPS 表单回调的原始数据，需包含 answerContents 字段。
+        exception (Exception | None):
+            上游处理过程中产生的异常对象，用于标记审核状态。
+        access_token (str):
+            WPS OpenAPI 的访问令牌，用于接口鉴权。
+        file_id (str, optional):
+            目标 WPS 表格文件 ID，默认使用预设表格。
+        TEXT_COLS (set[int], optional):
+            需要以纯文本方式写入的列索引集合（1-based），
+            用于避免数字或证件号被自动转为科学计数法。
+
+    返回：
+        dict:
+            写入成功时返回包含以下字段的结果字典：
+            - success (bool): 是否写入成功
+            - row (int): 实际写入的行号
+            - sheet_id (str): 写入的工作表 ID
+
+    异常：
+        RuntimeError:
+            当 WPS 接口返回非 0 状态码时抛出，表示写入失败。
+
+    备注：
+        - 编号字段根据写入行号自动生成；
+        - 附件字段会按题目标题映射并展开为多个单元格；
+        - 函数假定表格列结构与 row_values 顺序严格对应。
+    """
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -209,17 +252,17 @@ def write_verify_result(
         *iyuan_cells,
 
         # 25 深大义工
-        answers.get("深大义工", ""),
+        answers.get("广东省内志愿时--深大义工部分", ""),
 
         # 26 学号
-        answers.get("深大义工附件2", ""),
+        answers.get("本科和研究生都是深大的同学请注意️", ""),
 
 
         "",                                    # 27-29 预留（如果你表里有）
         "",
         "",
 
-        answers.get("邮箱", ""),               # 30 ✅ 新增邮箱
+        answers.get("电子邮箱", ""),               # 30 ✅ 新增邮箱
     ]
 
 

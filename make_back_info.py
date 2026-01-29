@@ -127,14 +127,16 @@ def make_back_info(exception: Exception, src_docx: str, szu_hours: float = None,
         if szu_hours is not None:
             hours_pattern = re.compile(r"(深大义工系统内，)\s*个志愿时；")
             for para in doc.paragraphs:
-                if hours_pattern.search(para.text):
-                    new_text = hours_pattern.sub(f"\\1{szu_hours}个志愿时；", para.text)
+                match = hours_pattern.search(para.text)
+                if match:
+                    new_text = f"{match.group(1)}{szu_hours}个志愿时；"
                     para.clear()
                     run = para.add_run(new_text)
                     run.font.name = "仿宋_GB2312"
                     run.font.size = Pt(16)
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), '仿宋_GB2312')
                     break
+
         
         doc.save(r".\downloads\深圳大学志愿时认证表_已更新.docx")
 

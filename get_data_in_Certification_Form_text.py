@@ -174,6 +174,6 @@ def parse_volunteer(path: str) -> dict:
 
 
 if __name__ == "__main__":
-    path = r"D:\D\file\auto_HR_operate\downloads\张宁宁_深圳大学志愿时认证表.pdf"
+    path = r"D:\D\file\auto_HR_operate\downloads\深圳大学志愿时认证表(42).docx"
     data = parse_volunteer(path)
     print(data)

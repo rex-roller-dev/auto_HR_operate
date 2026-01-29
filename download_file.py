@@ -77,7 +77,8 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
     options.add_experimental_option("prefs", prefs)
 
     service = Service(EDGE_DRIVER_PATH)
-    while not success:
+    for attempt in range(5):  # 只尝试一次
+        print(f"🔄 下载尝试第 {attempt + 1} 次...")
         # ===== 启动浏览器（只启动一次！）=====
         driver = webdriver.Edge(service=service, options=options)
 
@@ -100,21 +101,7 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
             print("❌ 菜单按钮没找到：", e)
 
         # 给菜单一点展开时间
-        time.sleep(5)
-
-        try:
-            confirm_btn = wait.until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, "//button[.//span[text()='确认登录'] or text()='确认登录']")
-                )
-            )
-            driver.execute_script("arguments[0].click();", confirm_btn)
-            print("✅ 已点击【确认登录】按钮")
-        except Exception as e:
-            print("❌ 未找到【确认登录】按钮：", e)
-
-        # 给菜单一点展开时间
-        time.sleep(5)
+        time.sleep(1.5)
 
         try:
             # 等“下载”按钮出现
@@ -127,6 +114,20 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
             print("✅ 已点击【下载】按钮")
         except Exception as e:
             print("❌ 没找到下载按钮：", e)
+
+        # wait = WebDriverWait(driver, 30)
+
+        # try:
+        #     confirm_btn = wait.until(
+        #         EC.element_to_be_clickable(
+        #             (By.XPATH, "//button[.//span[text()='确认登录'] or text()='确认登录']")
+        #         )
+        #     )
+        #     driver.execute_script("arguments[0].click();", confirm_btn)
+        #     print("✅ 已点击【确认登录】按钮")
+        # except Exception as e:
+        #     print("❌ 未找到【确认登录】按钮：", e)
+
         # ===== 等待下载完成 =====
         success, filename = wait_for_download(
         download_dir=DOWNLOAD_DIR,
@@ -136,10 +137,13 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
         )
         if success:
             print(f"✅ 文件下载成功：{filename}")
+            driver.quit()
+            break
         else:
             print("❌ 文件下载失败")
+            driver.quit()
+            continue  # 重试下载
 
-        driver.quit()
         
     # ===== 返回下载的文件路径 =====
     

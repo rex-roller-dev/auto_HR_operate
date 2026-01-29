@@ -1,21 +1,28 @@
 from flask import Flask, request, jsonify
+from queue import Queue
 
 app = Flask(__name__)
 
-def write_to_file(text):#重定向输出到文件
+# ✅ 全局唯一队列
+task_queue = Queue()
+
+def write_to_file(text):
     with open("test.txt", "a", encoding="utf-8") as f:
         f.write(text + "\n")
 
 @app.route("/wps_callback", methods=["POST"])
 def wps_callback():
-    data : dict = request.get_json()
-    print("收到：", data)
+    data: dict = request.get_json()
+    print("📩 收到 WPS 数据")
 
-    # 重定向输出到文件
-    #write_to_file(str(data))
+    task_queue.put(data)
+    print("📥 数据已入队")
 
     return jsonify({"code": 0, "msg": "ok"}), 200
 
+def write_to_file(text):#重定向输出到文件
+    with open("test.txt", "a", encoding="utf-8") as f:
+        f.write(text + "\n")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
