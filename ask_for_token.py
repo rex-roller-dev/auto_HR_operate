@@ -1,15 +1,17 @@
 import requests
 
-url = "https://openapi.wps.cn/oauth2/token"
-data = {
-    "grant_type": "client_credentials",
-    "client_id": "AK20251124JTQCUM",
-    "client_secret": "2acda93b48c66a26b7d96b5b20df1b61"
-}
+def ask_for_token() -> dict:
+    url = "https://openapi.wps.cn/oauth2/token"
+    data = {
+        "grant_type": "client_credentials",
+        "client_id": "AK20260123MIJKGM",
+        "client_secret": "2549734a740f7d74c1644ed5c9cb577c"
+    }
 
-headers = {
-    "Content-Type": "application/x-www-form-urlencoded"
-}
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
 
-response = requests.post(url, data=data, headers=headers)
-print(response.json())
+    response = requests.post(url, data=data, headers=headers)
+    print(response.json())
+    return response.json()
