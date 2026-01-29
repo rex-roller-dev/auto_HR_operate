@@ -187,6 +187,7 @@ def write_verify_result(
         状态,
         answers.get("请输入姓名", ""),
         answers.get("请选择性别", ""),
+        answers.get("您所在的校区", ""),
         answers.get("学号", ""),
         answers.get("学院", ""),
         answers.get("电子义工证注册号/义工证号", ""),
