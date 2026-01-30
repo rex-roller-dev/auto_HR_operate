@@ -1,4 +1,5 @@
 from datetime import datetime
+import shutil
 import threading
 from make_back_info import make_back_info
 from send_email import send_failure_email, send_success_email
@@ -14,12 +15,21 @@ from write_back import write_verify_result
 import sys
 import io
 from get_code import *
+import time
+import sys
 
+# 打开日志文件（追加模式）
+log_file = open("log.txt", "a", encoding="utf-8")
+sys.stdout = log_file
+sys.stderr = log_file  # 同时把错误输出也重定向
+
+# 确保输出使用 UTF-8 编码
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+downloads_dir = Path("downloads")
 
 def worker():
-    print("🚀 Worker 启动，等待任务...")
+    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...")
     while True:
         data = task_queue.get()  # 阻塞等待
         err = None
@@ -47,7 +57,7 @@ def worker():
                             })
             for file in file_links:
                 if file["link"]:
-                    print(f"⬇️ 正在下载文件：{file['fileName']}")
+                    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ⬇️ 正在下载文件：{file['fileName']}")
                     file_add = download_file_from_wps(
                         url=file["link"],
                         expected_name=file["fileName"],
@@ -80,7 +90,7 @@ def worker():
                     end_date=form_data["end_date"]
                 )
             
-            print("📊 解析结果：")
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 解析结果：")
             print("表格数据：", form_data)
             if file_links[1]["link"]:
                 print("志愿深圳数据：", sz_data)
@@ -98,21 +108,20 @@ def worker():
                 contain_szu_volunteer = data["answerContents"][-3]["value"][0] == "需要深大义工"
             )
             
-            print("✅ 时间校验通过")
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 时间校验通过")
 
         except Exception as e:
             err = e
-            print("❌ 任务失败:", e)
-
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 任务失败:", e)
         finally:
             try:
                 # 3. 准备回写内容
                 back_info = make_back_info(exception=err,
                                         src_docx=file_links[0]["local_path"],
                                         image_path=r"章.png",szu_hours=szu_hours if data["answerContents"][-3]["value"][0] == "需要深大义工" else 0)
-                print(f"📝 回写内容准备完毕:{back_info}")
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📝 回写内容准备完毕: {back_info}", flush=True)
             except Exception as e:
-                print("❌ 回写内容准备失败:", e)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 回写内容准备失败:", e, flush=True)
 
             try:
                 # 4. 回写
@@ -121,9 +130,9 @@ def worker():
                     exception=err if err else None,
                     access_token = access_token
                 )
-                print("📝 回写结果：", write_situation)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📝 回写结果：{write_situation}", flush=True)
             except Exception as e:
-                print("❌ 回写失败:", e)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 回写失败:", e, flush=True)
 
             # 5. 发送邮件
             try:
@@ -133,17 +142,25 @@ def worker():
                         name=data["answerContents"][0]["value"],
                         exception=err
                     )
-                    print("📧 失败邮件已发送")
+                    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📧 失败邮件已发送", flush=True)
                 else:
                     send_success_email(
                         to_email=data["answerContents"][8]["value"],
                         name=data["answerContents"][0]["value"],
                     )
-                    print("📧 成功邮件已发送")
+                    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📧 成功邮件已发送", flush=True)
             except Exception as e:
-                print("❌ 发送邮件失败:", e)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 发送邮件失败:", e, flush=True)
 
-        print("🚀 任务处理完毕，等待下一个任务...")
+            try:
+                # 清理下载的文件
+                if downloads_dir.exists() and downloads_dir.is_dir():
+                    shutil.rmtree(downloads_dir)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🧹 下载文件已清理", flush=True)
+            except Exception as e:
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 清理下载文件失败:", e, flush=True)
+
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 任务处理完毕，等待下一个任务...", flush=True)
         task_queue.task_done()
 
 if __name__ == "__main__":
