@@ -11,7 +11,10 @@ from get_data_in_ivolunteer_file import parse_ivolunteer
 from get_data_in_szuvolunteer_file import calc_hours_by_name_and_date
 from volunteer_hours_verify import volunteer_hours_verify
 from write_back import write_verify_result
+import sys
+import io
 
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 
 def worker():
