@@ -13,6 +13,7 @@ from volunteer_hours_verify import volunteer_hours_verify
 from write_back import write_verify_result
 import sys
 import io
+from get_code import *
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -24,10 +25,11 @@ def worker():
         err = None
         try:
             print("🛠 开始处理任务")
+            # 0.刷新token
+            access_token, refresh_token = get_access_token()
 
             # 1. 下载文件
             file_links = []
-            access_token = "eyJhbGciOiJFUzI1NiIsImtpZCI6IjNiNTkyYWYwLTk5ODktNDRhOC1hMzQ3LTE4Yzc1MDQ4MTlmNCIsInR5cCI6IkpXVCJ9.eyJhaWQiOjE3OTQ0ODE4MzgsImF0cCI6InVzZXIiLCJhdHMiOiJHREt3bGJyIiwiYnVpIjpmYWxzZSwiY2lkIjo2OTk1NTE0MTIsImNsaSI6IkFLMjAyNjAxMjNNSUpLR00iLCJleHAiOjE3Njk3MTA4NDksImpzdCI6ZmFsc2UsInNwaSI6MTc5NDk5NzkzMH0.ST-jgCF5ehhPHcXhppLFJzZWCE9yTQZJ16v5wPYvKH5XtjUBs52FYkOnTChzpUKz8TqkDR5CZaDSqL8clDh7tw"
             for item in data["answerContents"]:
                 if item["type"] == "file":
                     for f in item["value"]:
