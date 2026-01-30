@@ -135,6 +135,7 @@ def download_file_from_wps(url: str,expected_name: str,ext: str):
         ext=ext,
         timeout=60
         )
+        time.sleep(2)  # 确保文件写入完成
         if success:
             print(f"✅ 文件下载成功：{filename}")
             driver.quit()

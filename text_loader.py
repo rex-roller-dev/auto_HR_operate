@@ -11,6 +11,7 @@ def extract_text_from_docx(path: str) -> str:
     for p in doc.paragraphs:
         if p.text.strip():
             texts.append(p.text.strip())
+            
     return "\n".join(texts)
 
 def extract_text_from_pdf(path: Path) -> str:
@@ -34,14 +35,14 @@ def extract_text(file_path: str) -> str:
         raise ValueError(f"不支持的文件类型: {suffix}")
     
 if __name__ == "__main__":
-    word_path = r"D:\D\file\auto_HR_operate\downloads\深圳大学志愿时认证表(67).docx"
-    pdf_path = r"D:\D\file\auto_HR_operate\downloads\志愿深圳工义详细表.pdf"
+    word_path = r"D:\D\file\auto_HR_operate\downloads\深圳大学志愿时认证表(58).docx"
+    # pdf_path = r"D:\D\file\auto_HR_operate\downloads\志愿深圳工义详细表.pdf"
 
-    pdf_text = extract_text(pdf_path)
-    print("===== PDF 内容 =====")
-    pdf_text = normalize_text(pdf_text)
-    print(pdf_text)
+    # pdf_text = extract_text(pdf_path)
+    # print("===== PDF 内容 =====")
+    # pdf_text = normalize_text(pdf_text)
+    # print(pdf_text)
 
-    #word_text = extract_text(word_path)
-    #print("===== Word 内容 =====")
-    #print(word_text)
+    word_text = extract_text(word_path)
+    print("===== Word 内容 =====")
+    print(word_text)

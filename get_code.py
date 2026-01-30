@@ -1,22 +1,5 @@
-# import requests
-
-# resp = requests.post(
-#     "https://openapi.wps.cn/oauth2/token",
-#     headers={"Content-Type": "application/x-www-form-urlencoded"},
-#     data={
-#         "grant_type": "refresh_token",
-#         "client_id": "AK20260123MIJKGM",
-#         "client_secret": "2549734a740f7d74c1644ed5c9cb577c",
-#         "refresh_token": "kso_rt_j6dcVS0HPOYOKWbUw_f0Ki-tokt4YUTaEKcZOMLWSY0.lzKX4oqOd2WYz1T4MaVq_KI4e5AsY3ggA_2TbH5Xa3g.dqgKE6R"
-#     }
-# )
-# resp_json = resp.json()
-# new_access_token = resp_json["access_token"]
-# new_refresh_token = resp_json["refresh_token"]
-
-# print("New Access Token:", new_access_token)
-# print("New Refresh Token:", new_refresh_token)
-
+# 使用下面的链接获取code
+# https://openapi.wps.cn/oauth2/auth?client_id=AK20260123MIJKGM&response_type=code&scope=kso.sheets.readwrite,kso.sheets.read&state=123341111cc&redirect_uri=https://www.baidu.com
 
 import json
 import time

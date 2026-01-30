@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 import shutil
 import threading
 from make_back_info import make_back_info
@@ -20,8 +21,8 @@ import sys
 
 # 打开日志文件（追加模式）
 log_file = open("log.txt", "a", encoding="utf-8")
-sys.stdout = log_file
-sys.stderr = log_file  # 同时把错误输出也重定向
+# sys.stdout = log_file
+# sys.stderr = log_file  # 同时把错误输出也重定向
 
 # 确保输出使用 UTF-8 编码
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -57,22 +58,31 @@ def worker():
                             })
             for file in file_links:
                 if file["link"]:
+                    # 去掉括号和数字
+                    name_without_brackets = re.sub(r"\(\d+\)", "", file["fileName"])
+                    # 去掉后缀
+                    base_name = Path(name_without_brackets).stem
+                    base_name = base_name.strip()  # 去掉前后空格
                     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ⬇️ 正在下载文件：{file['fileName']}")
                     file_add = download_file_from_wps(
                         url=file["link"],
-                        expected_name=file["fileName"],
+                        expected_name=base_name,
                         ext="." + file["fileName"].split(".")[-1]
                     )
                     file["local_path"] = file_add
 
             # 2. 校验时间
             form_data = parse_volunteer(file_links[0]["local_path"])
+            if form_data["start_date"] is None or form_data["end_date"] is None:
+                raise ValueError("开始日期或结束日期格式错误")
             start_date = datetime.strptime(form_data["start_date"], "%Y-%m-%d").date()
             end_date = datetime.strptime(form_data["end_date"], "%Y-%m-%d").date()
+            if start_date > end_date:
+                raise ValueError("开始日期不能晚于结束日期")
 
-            if file_links[1]["link"]:
+            if len(file_links) > 1 and file_links[1]["link"]:
                 sz_data = parse_szvolunteer(file_links[1]["local_path"])
-            if file_links[2]["link"]:
+            if len(file_links) > 2 and file_links[2]["link"]: 
                 ivolunteer_hours = parse_ivolunteer(
                     file_links[2]["local_path"],
                     finalyear=end_date.year,
@@ -82,7 +92,7 @@ def worker():
                     finalmonth=end_date.month,
                     finalday=end_date.day
                 )
-            if data["answerContents"][-3]["value"][0] == "需要深大义工":
+            if len(data["answerContents"][-2]["value"]) >= 1 and data["answerContents"][-2]["value"][0] == "需要深大义工":
                 szu_hours = calc_hours_by_name_and_date(
                     file_path=r"D:\D\file\auto_HR_operate\szu_volunteer_data\2014-2021（完整版） .csv",
                     name=form_data["name"],
@@ -92,20 +102,20 @@ def worker():
             
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 解析结果：")
             print("表格数据：", form_data)
-            if file_links[1]["link"]:
+            if len(file_links) > 1 and file_links[1]["link"]:
                 print("志愿深圳数据：", sz_data)
-            if file_links[2]["link"]:
+            if len(file_links) > 2 and file_links[2]["link"]:
                 print("i志愿总时长：", ivolunteer_hours)
-            if data["answerContents"][-3]["value"][0] == "需要深大义工":
+            if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
                 print("深大义工总时长：", szu_hours)
 
             volunteer_hours_verify(
                 certificate_data = form_data,
-                sz_volunteer_data = sz_data if file_links[1]["link"] else None,
-                ivolunteer_hours = ivolunteer_hours if file_links[2]["link"] else None,
-                szu_volunteer_hours = szu_hours if data["answerContents"][-3]["value"][0] == "需要深大义工" else None,
-                contain_ivolunteer = file_links[2]["link"] is not None,
-                contain_szu_volunteer = data["answerContents"][-3]["value"][0] == "需要深大义工"
+                sz_volunteer_data = sz_data if len(file_links) > 1 and file_links[1]["link"] else None,
+                ivolunteer_hours = ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else None,
+                szu_volunteer_hours = szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else None,
+                contain_ivolunteer = len(file_links) > 2 and file_links[2]["link"] is not None,
+                contain_szu_volunteer = len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工"
             )
             
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 时间校验通过")
@@ -118,7 +128,7 @@ def worker():
                 # 3. 准备回写内容
                 back_info = make_back_info(exception=err,
                                         src_docx=file_links[0]["local_path"],
-                                        image_path=r"章.png",szu_hours=szu_hours if data["answerContents"][-3]["value"][0] == "需要深大义工" else 0)
+                                        image_path=r"章.png",szu_hours=szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0)
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📝 回写内容准备完毕: {back_info}", flush=True)
             except Exception as e:
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 回写内容准备失败:", e, flush=True)
