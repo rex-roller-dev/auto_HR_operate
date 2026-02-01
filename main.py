@@ -128,7 +128,9 @@ def worker():
                 # 3. 准备回写内容
                 back_info = make_back_info(exception=err,
                                         src_docx=file_links[0]["local_path"],
-                                        image_path=r"章.png",szu_hours=szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0)
+                                        image_path=r"章.png",
+                                        szu_hours=szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
+                                        i_volunteer_hours=ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else 0)
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📝 回写内容准备完毕: {back_info}", flush=True)
             except Exception as e:
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 回写内容准备失败:", e, flush=True)

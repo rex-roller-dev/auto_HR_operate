@@ -39,7 +39,7 @@ def stamp_pdf(
 
 
 
-def make_back_info(exception: Exception, src_docx: str, szu_hours: float = None, image_path = "章.png") -> str:
+def make_back_info(exception: Exception, src_docx: str, szu_hours: float = None, i_volunteer_hours: float = None, image_path: str = "章.png") -> str:
     """
     根据处理结果生成志愿时认证表的回执文件（更新日期并加盖公章）。
 
@@ -136,6 +136,19 @@ def make_back_info(exception: Exception, src_docx: str, szu_hours: float = None,
                     run.font.size = Pt(16)
                     run._element.rPr.rFonts.set(qn('w:eastAsia'), '仿宋_GB2312')
                     break
+
+        # 正则匹配 i志愿系统内，后面可能有空格再跟“个志愿时”
+        hours_pattern = re.compile(r"(i志愿系统内，)\s*个志愿时")
+        for para in doc.paragraphs:
+            match = hours_pattern.search(para.text)
+            if match:
+                new_text = f"{match.group(1)}{i_volunteer_hours} 个志愿时"
+                para.clear()
+                run = para.add_run(new_text)
+                run.font.name = "仿宋_GB2312"
+                run.font.size = Pt(16)
+                run._element.rPr.rFonts.set(qn('w:eastAsia'), '仿宋_GB2312')
+                break
 
         
         doc.save(r".\downloads\深圳大学志愿时认证表_已更新.docx")

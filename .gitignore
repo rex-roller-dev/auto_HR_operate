@@ -1,3 +1,10 @@
 email_config.py
 __pycache__/email_config.cpython-314.pyc
 szu_volunteer_data
+token.json
+*.txt
+email_config.py
+章.png
+szu_volunteer_data/
+__pycache__/
+*.pyc
