@@ -1,6 +1,3 @@
-# 使用下面的链接获取code
-# https://openapi.wps.cn/oauth2/auth?client_id=AK20260123MIJKGM&response_type=code&scope=kso.sheets.readwrite,kso.sheets.read&state=123341111cc&redirect_uri=https://www.baidu.com
-
 import json
 import time
 import requests

@@ -1,33 +1,68 @@
-import requests
+# 使用下面的链接获取code
+# https://openapi.wps.cn/oauth2/auth?client_id=AK20260123MIJKGM&response_type=code&scope=kso.sheets.readwrite,kso.sheets.read&state=123341111cc&redirect_uri=https://www.baidu.com
 
 import requests
-import time
+import json
+from pathlib import Path
+from typing import Dict
 
-WPS_TOKEN_URL = "https://openapi.wps.cn/oauth2/token"
+def get_access_token(
+    client_id: str,
+    client_secret: str,
+    code: str,
+    redirect_uri: str
+) -> dict:
+    """
+    使用 authorization_code 换取 access_token
+    """
+    url = "https://openapi.wps.cn/oauth2/token"
 
-CLIENT_ID = "AK20260123MIJKGM"
-CLIENT_SECRET = "2549734a740f7d74c1644ed5c9cb577c"
-
-def get_access_token():
-    payload = {
-        "grant_type": "client_credentials",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri,
     }
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    resp = requests.post(WPS_TOKEN_URL, data=payload, headers=headers, timeout=10)
-    resp.raise_for_status()  # HTTP 层错误直接抛异常
+    resp = requests.post(url, data=data, headers=headers, timeout=10)
+    resp.raise_for_status()
 
-    data = resp.json()
-    return data
+    token_data = resp.json()
+
+    if "access_token" not in token_data:
+        raise RuntimeError(f"Get token failed: {token_data}")
+
+    return token_data
+
+def save_token(token_data: Dict, file_path: str = "token.json"):
+    """
+    将 access_token 信息保存到 token.json
+    """
+    path = Path(file_path)
+
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(token_data, f, ensure_ascii=False, indent=2)
+
+def ask_for_token(code: str):
+    """
+    引导用户获取 authorization_code 并换取 access_token
+    """
+    token_info = get_access_token(
+        client_id="AK20260123MIJKGM",
+        client_secret="2549734a740f7d74c1644ed5c9cb577c",
+        code = code,
+        redirect_uri="https://www.baidu.com"
+    )
+
+    save_token(token_info)
 
 if __name__ == "__main__":
-    token_info = get_access_token()
-    print("access_token:", token_info["access_token"])
-    print("expires_in:", token_info["expires_in"])
-    print("token_type:", token_info["token_type"])
-
+    # 示例：请将下面的 YOUR_AUTHORIZATION_CODE 替换为实际的 code
+    code   = "kso_ac_VW4aD3lwmHLQyCRRJqNCGt14Dur5t33CeQuFRNmBOxs.-2pgjeI2JGtMNbm8VnZuG7Mw17tfUAKTnWby_6BRVns"
+    ask_for_token(code)
+    print("✅ Token 已保存到 token.json")
