@@ -1,5 +1,5 @@
 # 使用下面的链接获取code
-# https://openapi.wps.cn/oauth2/auth?client_id=AK20260123MIJKGM&response_type=code&scope=kso.sheets.readwrite,kso.sheets.read&state=123341111cc&redirect_uri=https://www.baidu.com
+# https://openapi.wps.cn/oauth2/auth?client_id=AK20260123MIJKGM&response_type=code&scope=kso.sheets.readwrite,kso.sheets.read,kso.file.readwrite,kso.file.read&state=123341111cc&redirect_uri=https://www.baidu.com
 
 import requests
 import json
@@ -63,6 +63,6 @@ def ask_for_token(code: str):
 
 if __name__ == "__main__":
     # 示例：请将下面的 YOUR_AUTHORIZATION_CODE 替换为实际的 code
-    code   = "kso_ac_VW4aD3lwmHLQyCRRJqNCGt14Dur5t33CeQuFRNmBOxs.-2pgjeI2JGtMNbm8VnZuG7Mw17tfUAKTnWby_6BRVns"
+    code   = "kso_ac_8EA1u5pZcQVUUQo_fTCPPsSwpKxvgK4VTZGOmRTBgaw.k-ZumBGbg4itdLPrtnJv1TxNPYzWhxX1j57RbEZAigs"
     ask_for_token(code)
     print("✅ Token 已保存到 token.json")
