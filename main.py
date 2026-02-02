@@ -18,6 +18,7 @@ import io
 from refresh_token import *
 import time
 import sys
+from download_file_with_dive import download_file_from_wps_with_drive
 
 # 打开日志文件（追加模式）
 log_file = open("log.txt", "a", encoding="utf-8")
@@ -30,12 +31,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 downloads_dir = Path("downloads")
 
 def worker():
-    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...")
+    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
     while True:
         data = task_queue.get()  # 阻塞等待
         err = None
         try:
-            print("🛠 开始处理任务")
+            print("🛠 开始处理任务",flush=True)
             # 0.刷新token
             access_token, refresh_token = get_access_token()
 
@@ -63,11 +64,10 @@ def worker():
                     # 去掉后缀
                     base_name = Path(name_without_brackets).stem
                     base_name = base_name.strip()  # 去掉前后空格
-                    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ⬇️ 正在下载文件：{file['fileName']}")
-                    file_add = download_file_from_wps(
-                        url=file["link"],
-                        expected_name=base_name,
-                        ext="." + file["fileName"].split(".")[-1]
+                    print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ⬇️ 正在下载文件：{file['fileName']}", flush=True)
+                    file_add = download_file_from_wps_with_drive(
+                        file_id = file["link"].split("/")[-1],  
+                        filename = file["fileName"]
                     )
                     file["local_path"] = file_add
 
@@ -100,14 +100,14 @@ def worker():
                     end_date=form_data["end_date"]
                 )
             
-            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 解析结果：")
-            print("表格数据：", form_data)
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 解析结果：", flush=True)
+            print("表格数据：", form_data, flush=True)
             if len(file_links) > 1 and file_links[1]["link"]:
-                print("志愿深圳数据：", sz_data)
+                print("志愿深圳数据：", sz_data, flush=True)
             if len(file_links) > 2 and file_links[2]["link"]:
-                print("i志愿总时长：", ivolunteer_hours)
+                print("i志愿总时长：", ivolunteer_hours, flush=True)
             if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
-                print("深大义工总时长：", szu_hours)
+                print("深大义工总时长：", szu_hours, flush=True)
 
             volunteer_hours_verify(
                 certificate_data = form_data,
@@ -118,11 +118,11 @@ def worker():
                 contain_szu_volunteer = len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工"
             )
             
-            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 时间校验通过")
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 时间校验通过", flush=True)
 
         except Exception as e:
             err = e
-            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 任务失败:", e)
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 任务失败:", e, flush=True)
         finally:
             try:
                 # 3. 准备回写内容
