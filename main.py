@@ -36,9 +36,8 @@ def worker():
         data = task_queue.get()  # 阻塞等待
         
         # ✅ 新增判断：没有 answerContents 就认为是绑定
-        if "answerContents" not in data:
+        if data.get("answerContents") is None:
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
-            task_queue.task_done()  # 标记任务完成
             continue  # 跳过本次循环，等待下一个任务
 
         err = None
