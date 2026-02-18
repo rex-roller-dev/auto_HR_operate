@@ -10,7 +10,7 @@ def write_to_file(text):
     with open("test.txt", "a", encoding="utf-8") as f:
         f.write(text + "\n")
 
-@app.route("/callback", methods=["POST"])
+@app.route("/event-invoke", methods=["POST"])
 def wps_callback():
     data: dict = request.get_json()
     print("📩 收到 WPS 数据")
