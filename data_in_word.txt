@@ -1,0 +1,1 @@
+{'name': '…Ú–°∑º', 'student_id': '2350552004', 'start_date': '2023-09-01', 'end_date': '2025-12-28', 'szu_volunteer_hours': 0, 'volunteer_shenzhen_hours': 10.67, 'i_volunteer_hours': 0, 'external_system_1': None, 'external_system_1_hours': None, 'external_system_2': None, 'external_system_2_hours': None, 'total_hours': 10.67}

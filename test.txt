@@ -1,0 +1,15 @@
+{'rid': 'ZzOCK4euEq', 
+'formId': '20251010154413380029407', 
+'formTitle': '志愿时认证表审核申请（粤海校区）-2025—2026', 
+'aid': '20260120211648978971186', 
+'eventTs': 1768915009000, 
+'messageTs': 1768985641586, 
+'creatorId': '1640347175', 
+'creatorName': '曹裕超',
+'event': 'create_answer', 
+'version': 2, 
+'answerContents': 
+[{'qid': 'j4jodj', 'type': 'input', 'title': '请输入姓名', 'value': '曹裕超'}, {'qid': 'aiecak', 'type': 'select', 'title': '请选择性别', 'value': ['男']}, {'qid': 'm97otm', 'type': 'input', 'title': '学号', 'value': '2300471004'}, {'qid': '8884so', 'type': 'input', 'title': '学院', 'value': '土木与交通工程学院'}, {'qid': 'egxtog', 'type': 'input', 'title': '电子义工证注册号/义工证号', 'value': '0000514250'}, {'qid': '5fbh5l', 'type': 'input', 'title': '请输入身份证号', 'value': '44022920001112161X'}, {'qid': 'pyci44', 'type': 'input', 'title': '请输入联系方式', 'value': '13531474271'}, {'qid': '93aewv', 'type': 'input', 'title': '用途', 'value': '入党档案'}, {'qid': 'vk7i5f', 'type': 'select', 'title': '2024-2025学年是否有挂科记录', 'value': ['否']}, {'qid': 'uljvc0', 'type': 'input', 'title': '是否重复申请', 'value': '是，第一次申请一直未进入制表状态'}, {'qid': 'shjlog', 'type': 'select', 'title': '审核方式', 'value': ['线上审核']}, {'qid': 'wywm2a', 'type': 'input', 'title': '备注', 'value': ''}, {'qid': 'k6xep1', 'type': 'file', 'title': '深圳大学志愿时认证表Word', 'value': [{'fileName': '认证表.pdf', 'fileShareLink': 'https://www.kdocs.cn/l/co4BlrgCtC3p', 'fileId': '487941693390', 'fileSid': 'co4BlrgCtC3p', 'ext': 'pdf'}]}, {'qid': 'p2zrq9', 'type': 'file', 'title': '广东省内志愿时服务证明（佐证材料）--志愿深圳部分', 'value': [{'fileName': '志愿深圳记录.pdf', 'fileShareLink': 'https://www.kdocs.cn/l/chgTYIgIr6o3', 'fileId': '487943188085', 'fileSid': 'chgTYIgIr6o3', 'ext': 'pdf'}]}, {'qid': 'xxo6ib', 'type': 'file', 'title': '附件一--志愿深圳部分（同上，相同无需重复上传）', 'value': []}, {'qid': 'tjbcap', 'type': 'file', 'title': '广东省内志愿时服务证明（佐证材料）--i志愿部分', 'value': []}, {'qid': 'lusa9s', 'type': 'select', 'title': '广东省内志愿时--深大义工部分', 'value': ['不需要深大义工']}, {'qid': 'yfyzzw', 'type': 'file', 'title': '附件二--补充佐证材料（相同无需重复上传）', 'value': []}]}
+
+[GET] https://openapi.wps.cn/oauth2/auth?response_type=code&client_id=AK20251124JTQCUM&redirect_uri=https%3A%2F%2Fsharika-pentahydric-salvador.ngrok-free.dev%2Fcallback&scope=kso.appfile.readwrite,kso.file.readwrite,kso.file.read&state=test
+

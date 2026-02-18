@@ -1,0 +1,271 @@
+2026-01-30 12:55:01 🚀 Worker 启动，等待任务...
+ * Serving Flask app 'listen_form_data'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.31.206:8000
+Press CTRL+C to quit
+127.0.0.1 - - [30/Jan/2026 12:55:29] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 12:55:29 ⬇️ 正在下载文件：深圳大学志愿时认证表(42).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+❌ 没找到下载按钮： Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff7df2f5ab5
+	0x7ff7df2f5b14
+	0x7ff7df642844
+	0x7ff7df096a9a
+	0x7ff7df096d35
+	0x7ff7df0d4b07
+	0x7ff7df08d6b7
+	0x7ff7df0d28f7
+	0x7ff7df08cbcc
+	0x7ff7df08be26
+	0x7ff7df08c9f3
+	0x7ff7df150214
+	0x7ff7df14c685
+	0x7ff7df15ce73
+	0x7ff7df310de8
+	0x7ff7df3196b6
+	0x7ff7df2fd194
+	0x7ff7df2fd2d9
+	0x7ff7df2eb172
+	0x7ff892cde8d7
+	0x7ff893d0c53c
+
+✅ 文件下载成功：深圳大学志愿时认证表(42).docx
+2026-01-30 12:56:10 ⬇️ 正在下载文件：志愿深圳-王佳豪.pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：志愿深圳-王佳豪.pdf
+2026-01-30 12:56:41 ⬇️ 正在下载文件：i志愿-王佳豪.pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+❌ 没找到下载按钮： Message: 
+Stacktrace:
+Symbols not available. Dumping unresolved backtrace:
+	0x7ff7df2f5ab5
+	0x7ff7df2f5b14
+	0x7ff7df642844
+	0x7ff7df096a9a
+	0x7ff7df096d35
+	0x7ff7df0d4b07
+	0x7ff7df08d6b7
+	0x7ff7df0d28f7
+	0x7ff7df08cbcc
+	0x7ff7df08be26
+	0x7ff7df08c9f3
+	0x7ff7df150214
+	0x7ff7df14c685
+	0x7ff7df15ce73
+	0x7ff7df310de8
+	0x7ff7df3196b6
+	0x7ff7df2fd194
+	0x7ff7df2fd2d9
+	0x7ff7df2eb172
+	0x7ff892cde8d7
+	0x7ff893d0c53c
+
+✅ 文件下载成功：i志愿-王佳豪.pdf
+2026-01-30 12:57:24 📊 解析结果：
+表格数据： {'name': '王佳豪', 'student_id': '2300474002', 'start_date': '2019-09-01', 'end_date': '2024-10-09', 'szu_volunteer_hours': None, 'volunteer_shenzhen_hours': 195.5, 'i_volunteer_hours': 171.35, 'external_system_1': None, 'external_system_1_hours': None, 'external_system_2': None, 'external_system_2_hours': None, 'total_hours': 366.85}
+志愿深圳数据： {'姓名': '王佳豪', '义工号': '0000549495', '服务时长': 195.5}
+i志愿总时长： 171.35
+深大义工总时长： 151.5
+2026-01-30 12:57:24 ✅ 时间校验通过
+  0%|                                                                                                                                                                            | 0/1 [00:00<?, ?it/s]100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.62s/it]100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.65s/it]
+2026-01-30 12:57:28 📝 回写内容准备完毕: .\downloads\深圳大学志愿时认证表_已盖章.pdf
+2026-01-30 12:57:29 📝 回写结果：{'success': True, 'row': 1079, 'sheet_id': 3}
+2026-01-30 12:57:33 📧 成功邮件已发送
+2026-01-30 12:57:33 🧹 下载文件已清理
+2026-01-30 12:57:33 🚀 任务处理完毕，等待下一个任务...
+2026-01-30 13:01:24 🚀 Worker 启动，等待任务...
+ * Serving Flask app 'listen_form_data'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.31.206:8000
+Press CTRL+C to quit
+127.0.0.1 - - [30/Jan/2026 13:01:31] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 13:01:31 ⬇️ 正在下载文件：深圳大学志愿时认证表(42).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：深圳大学志愿时认证表(42).docx
+2026-01-30 13:01:43 ⬇️ 正在下载文件：志愿深圳-王佳豪.pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：志愿深圳-王佳豪.pdf
+2026-01-30 13:01:54 ⬇️ 正在下载文件：i志愿-王佳豪.pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：i志愿-王佳豪.pdf
+2026-01-30 13:02:06 ❌ 任务失败: [Errno 2] No such file or directory: 'd:\\D\\file\\auto_HR_operate\\downloads\\i志愿-王佳豪.pdf'
+2026-01-30 13:02:06 ❌ 回写内容准备失败: cannot access local variable 'szu_hours' where it is not associated with a value
+2026-01-30 13:02:07 📝 回写结果：{'success': True, 'row': 1080, 'sheet_id': 3}
+2026-01-30 13:02:10 📧 失败邮件已发送
+2026-01-30 13:02:10 🧹 下载文件已清理
+2026-01-30 13:02:10 🚀 任务处理完毕，等待下一个任务...
+127.0.0.1 - - [30/Jan/2026 13:05:15] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 13:05:15 ⬇️ 正在下载文件：深圳大学志愿时认证表(42).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：深圳大学志愿时认证表(42).docx
+2026-01-30 13:05:27 ⬇️ 正在下载文件：志愿深圳-王佳豪.pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：志愿深圳-王佳豪.pdf
+2026-01-30 13:05:40 ⬇️ 正在下载文件：i志愿-王佳豪.pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：i志愿-王佳豪.pdf
+2026-01-30 13:05:53 📊 解析结果：
+表格数据： {'name': '王佳豪', 'student_id': '2300474002', 'start_date': '2019-09-01', 'end_date': '2024-10-09', 'szu_volunteer_hours': None, 'volunteer_shenzhen_hours': 195.5, 'i_volunteer_hours': 171.35, 'external_system_1': None, 'external_system_1_hours': None, 'external_system_2': None, 'external_system_2_hours': None, 'total_hours': 366.85}
+志愿深圳数据： {'姓名': '王佳豪', '义工号': '0000549495', '服务时长': 195.5}
+i志愿总时长： 171.35
+深大义工总时长： 151.5
+2026-01-30 13:05:53 ✅ 时间校验通过
+  0%|                                                                                                                                                                            | 0/1 [00:00<?, ?it/s]100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.39s/it]100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:01<00:00,  1.40s/it]2026-01-30 13:05:57 📝 回写内容准备完毕: .\downloads\深圳大学志愿时认证表_已盖章.pdf
+2026-01-30 13:05:59 📝 回写结果：{'success': True, 'row': 1081, 'sheet_id': 3}
+2026-01-30 13:06:03 📧 成功邮件已发送
+2026-01-30 13:06:03 🧹 下载文件已清理
+2026-01-30 13:06:03 🚀 任务处理完毕，等待下一个任务...
+
+2026-01-30 13:08:48 🚀 Worker 启动，等待任务...
+ * Serving Flask app 'listen_form_data'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.31.206:8000
+Press CTRL+C to quit
+127.0.0.1 - - [30/Jan/2026 13:11:29] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 13:11:29 ⬇️ 正在下载文件：深圳大学志愿时认证表(61).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：深圳大学志愿时认证表(61).docx
+2026-01-30 13:11:41 ⬇️ 正在下载文件：c03778ec4c144993944671dd96c1dcb5(1).pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：c03778ec4c144993944671dd96c1dcb5(1).pdf
+2026-01-30 13:11:52 ❌ 任务失败: [Errno 2] No such file or directory: 'd:\\D\\file\\auto_HR_operate\\downloads\\c03778ec4c144993944671dd96c1dcb5(1).pdf'
+2026-01-30 13:11:52 ❌ 回写内容准备失败: list index out of range
+2026-01-30 13:11:54 📝 回写结果：{'success': True, 'row': 1082, 'sheet_id': 3}
+2026-01-30 13:11:56 📧 失败邮件已发送
+2026-01-30 13:11:56 🧹 下载文件已清理
+2026-01-30 13:11:56 🚀 任务处理完毕，等待下一个任务...
+127.0.0.1 - - [30/Jan/2026 13:12:33] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 13:12:33 ⬇️ 正在下载文件：深圳大学志愿时认证表(61).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：深圳大学志愿时认证表(61).docx
+2026-01-30 13:13:01 ⬇️ 正在下载文件：c03778ec4c144993944671dd96c1dcb5(1).pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：c03778ec4c144993944671dd96c1dcb5(1).pdf
+2026-01-30 13:13:32 ❌ 任务失败: list index out of range
+2026-01-30 13:13:32 ❌ 回写内容准备失败: list index out of range
+2026-01-30 13:13:33 📝 回写结果：{'success': True, 'row': 1083, 'sheet_id': 3}
+2026-01-30 13:13:36 📧 失败邮件已发送
+2026-01-30 13:13:36 🧹 下载文件已清理
+2026-01-30 13:13:36 🚀 任务处理完毕，等待下一个任务...
+2026-01-30 13:17:33 🚀 Worker 启动，等待任务...
+ * Serving Flask app 'listen_form_data'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://192.168.31.206:8000
+Press CTRL+C to quit
+127.0.0.1 - - [30/Jan/2026 13:17:37] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 13:17:37 ⬇️ 正在下载文件：深圳大学志愿时认证表(61).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：深圳大学志愿时认证表(61).docx
+2026-01-30 13:17:49 ⬇️ 正在下载文件：c03778ec4c144993944671dd96c1dcb5(1).pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：c03778ec4c144993944671dd96c1dcb5(1).pdf
+2026-01-30 13:18:01 ❌ 任务失败: list index out of range
+2026-01-30 13:18:01 ❌ 回写内容准备失败: list index out of range
+2026-01-30 13:18:03 📝 回写结果：{'success': True, 'row': 1084, 'sheet_id': 3}
+2026-01-30 13:18:05 📧 失败邮件已发送
+2026-01-30 13:18:05 🧹 下载文件已清理
+2026-01-30 13:18:05 🚀 任务处理完毕，等待下一个任务...
+127.0.0.1 - - [30/Jan/2026 13:19:20] "POST /wps_callback HTTP/1.1" 200 -
+📩 收到 WPS 数据
+📥 数据已入队
+🛠 开始处理任务
+✅ Access token 有效
+2026-01-30 13:19:20 ⬇️ 正在下载文件：深圳大学志愿时认证表(61).docx
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：深圳大学志愿时认证表(61).docx
+2026-01-30 13:19:32 ⬇️ 正在下载文件：c03778ec4c144993944671dd96c1dcb5(1).pdf
+Download dir = d:\D\file\auto_HR_operate\downloads
+🔄 下载尝试第 1 次...
+✅ 已点击 ☰ 菜单
+✅ 已点击【下载】按钮
+✅ 文件下载成功：c03778ec4c144993944671dd96c1dcb5(1).pdf
+2026-01-30 13:19:44 ❌ 任务失败: [Errno 2] No such file or directory: 'd:\\D\\file\\auto_HR_operate\\downloads\\c03778ec4c144993944671dd96c1dcb5(1).pdf'
+2026-01-30 13:19:44 ❌ 回写内容准备失败: list index out of range
+2026-01-30 13:19:45 📝 回写结果：{'success': True, 'row': 1085, 'sheet_id': 3}
+2026-01-30 13:19:48 📧 失败邮件已发送
+2026-01-30 13:19:48 🧹 下载文件已清理
+2026-01-30 13:19:48 🚀 任务处理完毕，等待下一个任务...
