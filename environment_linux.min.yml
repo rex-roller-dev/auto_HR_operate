@@ -1,0 +1,45 @@
+name: auto_HR
+channels:
+  - defaults
+dependencies:
+  - tk
+  - openpyxl
+  - cffi
+  - pysocks
+  - pip
+  - wsproto
+  - pandas
+  - blinker
+  - click
+  - werkzeug
+  - et_xmlfile
+  - openssl
+  - zlib
+  - libxml2
+  - outcome
+  - pycparser
+  - tzdata
+  - numpy
+  - flask
+  - trio
+  - python=3.11
+  - jinja2
+  - websocket-client
+  - trio-websocket
+  - numexpr
+  - sqlite
+  - zstd
+  - libiconv
+  - pytz
+  - python-dateutil
+  - xz
+  - libffi
+  - selenium
+  - sniffio
+  - h11
+  - bzip2
+  - requests
+  - lz4-c
+  - bottleneck
+  - itsdangerous
+prefix: /root/miniconda3/envs/auto_HR

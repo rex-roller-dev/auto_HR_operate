@@ -5,7 +5,7 @@ import threading
 from make_back_info import make_back_info
 from send_email import send_failure_email, send_success_email
 from task_queue import task_queue
-from download_file import download_file_from_wps
+# from download_file import download_file_from_wps
 from listen_form_data import app, task_queue
 from get_data_in_Certification_Form_text import parse_volunteer
 from get_data_in_szvolunteer_text import parse_szvolunteer

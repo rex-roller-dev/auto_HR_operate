@@ -63,6 +63,6 @@ def ask_for_token(code: str):
 
 if __name__ == "__main__":
     # 示例：请将下面的 YOUR_AUTHORIZATION_CODE 替换为实际的 code
-    code   = "kso_ac_8EA1u5pZcQVUUQo_fTCPPsSwpKxvgK4VTZGOmRTBgaw.k-ZumBGbg4itdLPrtnJv1TxNPYzWhxX1j57RbEZAigs"
+    code   = "kso_ac_IpJUndhE2VCAROLpNazuIyM59q_KItmijp1gLVj5WaU.ySU3gFRNRC-eaaOy8Wr6hX7QzkSI3aJlkazDbxhHakA"
     ask_for_token(code)
     print("✅ Token 已保存到 token.json")

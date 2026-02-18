@@ -2,6 +2,10 @@ from typing import Optional
 import requests
 import json
 from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent
+DOWNLOADS_DIR = BASE_DIR / "downloads"
+TOKEN_FILE = BASE_DIR / "token.json"
+
 
 def load_access_token(token_file: Path) -> str:
     """
@@ -162,15 +166,9 @@ def download_file_from_wps_with_drive(
     filename: str
 ) -> Path :
 
-    from pathlib import Path
-    import json
-
-    TOKEN_FILE = Path("token.json")
-    FILE_ID = file_id
-
     ACCESS_TOKEN = load_access_token(TOKEN_FILE)
 
-    drive_id = get_drive_id_by_file_id(FILE_ID, ACCESS_TOKEN)
+    drive_id = get_drive_id_by_file_id(file_id, ACCESS_TOKEN)
     # print(f"Drive ID: {drive_id}")
     cookies = {
         "wps_sid": "V02Snq6gU0PmmPjNhEHnYw15Xoxt7mw00a41e763006af59eae",
@@ -178,9 +176,9 @@ def download_file_from_wps_with_drive(
     }
     path = download_wps_file(
         drive_id=drive_id,
-        file_id=FILE_ID,
+        file_id=file_id,
         access_token=ACCESS_TOKEN,
-        save_dir=Path("downloads"),
+        save_dir=DOWNLOADS_DIR,
         filename=filename,
         cookies=cookies,   # 👈 关  键
     )

@@ -5,7 +5,13 @@ from datetime import datetime
 import re
 from docx.shared import Pt
 from docx.oxml.ns import qn
-from docx2pdf import convert
+from docx_to_pdf import convert
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+DOWNLOADS_DIR = BASE_DIR / "downloads"
+
+
 
 def stamp_pdf(
     pdf_path: str,
@@ -151,17 +157,20 @@ def make_back_info(exception: Exception, src_docx: str, szu_hours: float = None,
                 break
 
         
-        doc.save(r".\downloads\深圳大学志愿时认证表_已更新.docx")
+        updated_docx = DOWNLOADS_DIR / "深圳大学志愿时认证表_已更新.docx"
+        doc.save(updated_docx)
 
         # 4️⃣ 转 PDF
+        unstamped_docx = DOWNLOADS_DIR / "深圳大学志愿时认证表_已更新.docx"
+        unstamped_pdf = DOWNLOADS_DIR / "深圳大学志愿时认证表_未盖章.pdf"
         convert(
-            r".\downloads\深圳大学志愿时认证表_已更新.docx",
-            r".\downloads\深圳大学志愿时认证表_未盖章.pdf"
+            unstamped_docx,
+            unstamped_pdf
         )
 
                 # 5️⃣ PDF 盖章（浮于文字上方）
-        pdf_path = r".\downloads\深圳大学志愿时认证表_未盖章.pdf"
-        stamped_pdf_path = r".\downloads\深圳大学志愿时认证表_已盖章.pdf"
+        pdf_path = unstamped_pdf
+        stamped_pdf_path = DOWNLOADS_DIR / "深圳大学志愿时认证表_已盖章.pdf"
 
         output_path = stamp_pdf(
             pdf_path=pdf_path,
