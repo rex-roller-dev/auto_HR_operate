@@ -59,9 +59,13 @@ def get_access_token():
     
     if token_expired(token_data):
         print("🔄 Access token 已过期，正在刷新...")
-        token_data = refresh_token(token_data["refresh_token"])
-        save_token(token_data)
-        print("✅ Token 已刷新")
+        try:
+            token_data = refresh_token(token_data["refresh_token"])
+            save_token(token_data)
+            print("✅ Token 已刷新")
+        except Exception as e:
+            print(f"❌ 刷新 token 失败: {e}")
+            raise   
     else:
         print("✅ Access token 有效")
 

@@ -21,7 +21,7 @@ import sys
 from download_file_with_dive import download_file_from_wps_with_drive
 
 # 打开日志文件（追加模式）
-log_file = open("log.txt", "a", encoding="utf-8")
+# log_file = open("log.txt", "a", encoding="utf-8")
 # sys.stdout = log_file
 # sys.stderr = log_file  # 同时把错误输出也重定向
 
