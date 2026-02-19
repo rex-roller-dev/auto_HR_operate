@@ -7,21 +7,21 @@ DOWNLOADS_DIR = BASE_DIR / "downloads"
 TOKEN_FILE = BASE_DIR / "token.json"
 
 
-def load_access_token(token_file: Path) -> str:
-    """
-    从 token.json 中读取 access_token
-    """
-    if not token_file.exists():
-        raise FileNotFoundError(f"{token_file} 不存在，请先获取 token")
+# def load_access_token(token_file: Path) -> str:
+#     """
+#     从 token.json 中读取 access_token
+#     """
+#     if not token_file.exists():
+#         raise FileNotFoundError(f"{token_file} 不存在，请先获取 token")
 
-    with token_file.open("r", encoding="utf-8") as f:
-        token_data = json.load(f)
+#     with token_file.open("r", encoding="utf-8") as f:
+#         token_data = json.load(f)
 
-    access_token = token_data.get("access_token")
-    if not access_token:
-        raise ValueError("token.json 中未找到 access_token")
+#     access_token = token_data.get("access_token")
+#     if not access_token:
+#         raise ValueError("token.json 中未找到 access_token")
 
-    return access_token
+#     return access_token
 
 def get_file_meta(file_id: str, access_token: str) -> dict:
     """
@@ -164,10 +164,11 @@ def download_wps_file(
 
 def download_file_from_wps_with_drive(
     file_id: str,
-    filename: str
+    filename: str,
+    access_token: str
 ) -> Path :
 
-    ACCESS_TOKEN = load_access_token(TOKEN_FILE)
+    ACCESS_TOKEN = access_token
 
     drive_id = get_drive_id_by_file_id(file_id, ACCESS_TOKEN)
     # print(f"Drive ID: {drive_id}")
