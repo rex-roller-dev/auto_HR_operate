@@ -40,12 +40,12 @@ def worker():
         data = task_queue.get()  # 阻塞等待
         print(data,flush=True)
         
-        # # ✅ 新增判断：没有 answerContents 就认为是绑定
-        # if data.get("answerContents") is None:
-        #     print(data.get("answerContents"))
-        #     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
-        #     return jsonify({"bind_code":"20260123201242397174053"}), 200
-        #     continue  # 跳过本次循环，等待下一个任务
+        # ✅ 新增判断：没有 answerContents 就认为是绑定
+        if data.get("answerContents") is None:
+            print(data.get("answerContents"))
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
+            return jsonify({"bind_code":"20260123201242397174053"}), 200
+            continue  # 跳过本次循环，等待下一个任务
 
         # 从环境变量获取 code（如果未设置则为 None）
         code = os.environ.get("CODE")
@@ -60,6 +60,7 @@ def worker():
                 # 根据需求决定是否退出程序
                 # sys.exit(1)
         else:
+            print(code)
             print("⏭️ CODE 不存在或长度 ≤ 80，跳过 Token 获取步骤")
 
         err = None
