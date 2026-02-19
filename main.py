@@ -19,6 +19,8 @@ from refresh_token import *
 import time
 import sys
 from download_file_with_dive import download_file_from_wps_with_drive
+import os
+from ask_for_token import ask_for_token
 
 # 打开日志文件（追加模式）
 # log_file = open("log.txt", "a", encoding="utf-8")
@@ -39,6 +41,21 @@ def worker():
         if data.get("answerContents") is None:
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
             continue  # 跳过本次循环，等待下一个任务
+
+        # 从环境变量获取 code（如果未设置则为 None）
+        code = os.environ.get("CODE")
+        
+        if code and len(code) > 80:
+            print(f"📦 CODE 长度 {len(code)} > 80，正在获取 Token...")
+            try:
+                ask_for_token(code)
+                print("✅ Token 已保存到 token.json")
+            except Exception as e:
+                print(f"❌ 获取 Token 失败: {e}")
+                # 根据需求决定是否退出程序
+                # sys.exit(1)
+        else:
+            print("⏭️ CODE 不存在或长度 ≤ 80，跳过 Token 获取步骤")
 
         err = None
         try:
