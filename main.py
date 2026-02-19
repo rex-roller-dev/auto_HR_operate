@@ -2,6 +2,8 @@ from datetime import datetime
 import re
 import shutil
 import threading
+
+from flask import jsonify
 from make_back_info import make_back_info
 from send_email import send_failure_email, send_success_email
 from task_queue import task_queue
@@ -42,6 +44,7 @@ def worker():
         if data.get("answerContents") is None:
             print(data.get("answerContents"))
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
+            return jsonify({"bind_code":"20260123201242397174053"}), 200
             continue  # 跳过本次循环，等待下一个任务
 
         # 从环境变量获取 code（如果未设置则为 None）

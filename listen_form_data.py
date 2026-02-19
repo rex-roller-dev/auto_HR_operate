@@ -22,7 +22,7 @@ def wps_callback():
     task_queue.put(data)
     print("📥 数据已入队")
 
-    return jsonify({"bind_code":"20260123201242397174053"}), 200
+
 
 def write_to_file(text):#重定向输出到文件
     with open("test.txt", "a", encoding="utf-8") as f:
