@@ -67,6 +67,7 @@ def worker():
                 print("🛠 开始处理任务",flush=True)
                 # 0.刷新token
                 access_token, refresh_token = get_access_token()
+                print(f"access_token:{access_token}, refresh_token:{refresh_token}", flush=True)
 
                 # 1. 下载文件
                 file_links = []
