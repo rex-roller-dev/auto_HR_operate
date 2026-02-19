@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - cos-python-sdk-v5
   - uvicorn
   - fastapi
   - _libgcc_mutex=0.1
@@ -104,6 +103,7 @@ dependencies:
   - zlib=1.3.1
   - zstd=1.5.7
   - pip:
+      - cos-python-sdk-v5
       - cryptography==46.0.4
       - docx2pdf==0.1.8
       - git-filter-repo==2.47.0
