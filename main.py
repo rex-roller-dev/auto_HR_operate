@@ -37,7 +37,9 @@ def worker():
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
         while True:
             data, request_id = task_queue.get()  # 阻塞等待
+            print(f"Received data before extract_body: {data}", flush=True)
             data = extract_body(data)
+            print(f"Received data after extract_body: {data}", flush=True)
             print(f"📥 收到任务，请求 ID: {request_id}", flush=True)
             print(data,flush=True)
 
@@ -62,7 +64,7 @@ def worker():
                 print("🛠 开始处理任务",flush=True)
                 # 0.刷新token
                 access_token, refresh_token = get_access_token()
-                print(f"access_token:{access_token}, refresh_token:{refresh_token}", flush=True)
+                # print(f"access_token:{access_token}, refresh_token:{refresh_token}", flush=True)
 
                 # 1. 下载文件
                 file_links = []
