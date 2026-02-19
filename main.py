@@ -39,21 +39,15 @@ def worker():
             data, request_id = task_queue.get()  # 阻塞等待
             print(f"📥 收到任务，请求 ID: {request_id}", flush=True)
             print(data,flush=True)
-            
-            # # ✅ 新增判断：没有 answerContents 就认为是绑定
-            # if data.get("answerContents") is None:
-            #     print(data.get("answerContents"))
-            #     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
-            #     continue  # 跳过本次循环，等待下一个任务
 
             # 从环境变量获取 code（如果未设置则为 None）
             code = os.environ.get("CODE")
-            
             if code and len(code) > 80:
                 print(f"📦 CODE 长度 {len(code)} > 80，正在获取 Token...")
                 try:
                     ask_for_token(code)
                     print("✅ Token 已保存到 token.json")
+                    time.sleep(5)  # 等待文件写入完成
                 except Exception as e:
                     print(f"❌ 获取 Token 失败: {e}")
                     # 根据需求决定是否退出程序

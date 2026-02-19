@@ -58,7 +58,8 @@ def ask_for_token(code: str):
         code = code,
         redirect_uri="https://www.baidu.com"
     )
-
+    print("获取到 Token 信息:")
+    print(json.dumps(token_info, indent=2, ensure_ascii=False))
     save_token(token_info)
 
 if __name__ == "__main__":
