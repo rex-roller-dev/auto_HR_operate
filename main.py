@@ -38,7 +38,7 @@ def worker():
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
     while True:
         data = task_queue.get()  # 阻塞等待
-        print(data)
+        print(data,flush=True)
         
         # # ✅ 新增判断：没有 answerContents 就认为是绑定
         # if data.get("answerContents") is None:
