@@ -174,6 +174,7 @@ def download_file_from_wps_with_drive(
         "wps_sid": "V02Snq6gU0PmmPjNhEHnYw15Xoxt7mw00a41e763006af59eae",
         "kso_sid": "TKS-Txfe9jsW8I2kV1Z88rIIK-IRTro0KK-AKhXPKOiwApUIggeWcwYQtJeJzQI70ebuYCppbfoyIeopTp-3gq02QE_YERCSQ3b9fXu398eld0IJRf0pNf6uNzYzO7UIKMIpKyIzO3zA8TcdX_44ASKBNkzkSXf5nxDfcVoNtcIVpmDRQNgyV3QJ-KN-K6oTTKS.B55CrQ2a-ixOknVezaqdxfJhiHe4UpVqpWHd8KCwf_kMW_RdWScXAOBUL6MrR7FedNRxdqJWha6Bu8IdSZILsr"
     }
+    print(f"drive_id: {drive_id}, file_id: {file_id}, access_token: {ACCESS_TOKEN}", flush=True)
     path = download_wps_file(
         drive_id=drive_id,
         file_id=file_id,
