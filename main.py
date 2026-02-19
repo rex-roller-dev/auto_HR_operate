@@ -21,7 +21,7 @@ import sys
 from download_file_with_dive import download_file_from_wps_with_drive
 import os
 from ask_for_token import ask_for_token
-
+from extract_body import extract_body
 # 打开日志文件（追加模式）
 # log_file = open("log.txt", "a", encoding="utf-8")
 # sys.stdout = log_file
@@ -37,6 +37,7 @@ def worker():
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
         while True:
             data, request_id = task_queue.get()  # 阻塞等待
+            data = extract_body(data)
             print(f"📥 收到任务，请求 ID: {request_id}", flush=True)
             print(data,flush=True)
 
