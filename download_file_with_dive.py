@@ -29,6 +29,7 @@ def get_file_meta(file_id: str, access_token: str) -> dict:
     """
     url = f"https://openapi.wps.cn/v7/files/{file_id}/meta"
 
+    print(f"Getting file meta for file_id: {file_id} with access_token: {access_token}", flush=True)
     headers = {
         # ⚠️ 注意：这是 KSO-1 签名后的 token
         "Authorization": f"Bearer {access_token}",
