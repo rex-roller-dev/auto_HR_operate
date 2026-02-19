@@ -39,6 +39,7 @@ def worker():
         
         # ✅ 新增判断：没有 answerContents 就认为是绑定
         if data.get("answerContents") is None:
+            print(data.get("answerContents"))
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 绑定成功，没有 answerContents", flush=True)
             continue  # 跳过本次循环，等待下一个任务
 
