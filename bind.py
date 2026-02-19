@@ -15,4 +15,4 @@ def callback():
     return jsonify({"bind_code":"20260123201242397174053"}), 200
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=9000)
