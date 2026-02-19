@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - cos-python-sdk-v5
   - uvicorn
   - fastapi
   - _libgcc_mutex=0.1

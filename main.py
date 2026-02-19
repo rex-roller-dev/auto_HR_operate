@@ -10,7 +10,7 @@ from listen_form_data import app, task_queue
 from get_data_in_Certification_Form_text import parse_volunteer
 from get_data_in_szvolunteer_text import parse_szvolunteer
 from get_data_in_ivolunteer_file import parse_ivolunteer
-from get_data_in_szuvolunteer_file import calc_hours_by_name_and_date
+from get_data_in_szuvolunteer_file import calc_hours_by_name_and_date, calc_hours_by_name_and_date_from_cos
 from volunteer_hours_verify import volunteer_hours_verify
 from write_back import write_verify_result
 import sys
@@ -36,6 +36,7 @@ def worker():
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
     while True:
         data = task_queue.get()  # 阻塞等待
+        print(data)
         
         # ✅ 新增判断：没有 answerContents 就认为是绑定
         if data.get("answerContents") is None:
@@ -117,13 +118,17 @@ def worker():
                     finalday=end_date.day
                 )
             if len(data["answerContents"][-2]["value"]) >= 1 and data["answerContents"][-2]["value"][0] == "需要深大义工":
-                szu_hours = calc_hours_by_name_and_date(
-                    file_path=r"D:\D\file\auto_HR_operate\szu_volunteer_data\2014-2021（完整版） .csv",
+                # 从环境变量获取 COS 配置
+                COS_BUCKET = os.environ.get('COS_BUCKET')
+                COS_KEY = "2014-2021（完整版） .csv"  # 根据你在 COS 中的实际路径修改
+                szu_hours = calc_hours_by_name_and_date_from_cos(
+                    bucket_name=COS_BUCKET,
+                    cos_key=COS_KEY,
                     name=form_data["name"],
                     start_date=form_data["start_date"],
                     end_date=form_data["end_date"]
                 )
-            
+                        
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 解析结果：", flush=True)
             print("表格数据：", form_data, flush=True)
             if len(file_links) > 1 and file_links[1]["link"]:
