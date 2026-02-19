@@ -5,7 +5,7 @@ import requests
 import json
 from pathlib import Path
 from typing import Dict
-
+from refresh_token import save_token
 def get_access_token(
     client_id: str,
     client_secret: str,
@@ -39,14 +39,14 @@ def get_access_token(
 
     return token_data
 
-def save_token(token_data: Dict, file_path: str = "token.json"):
-    """
-    将 access_token 信息保存到 token.json
-    """
-    path = Path(file_path)
+# def save_token(token_data: Dict, file_path: str = "token.json"):
+#     """
+#     将 access_token 信息保存到 token.json
+#     """
+#     path = Path(file_path)
 
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(token_data, f, ensure_ascii=False, indent=2)
+#     with path.open("w", encoding="utf-8") as f:
+#         json.dump(token_data, f, ensure_ascii=False, indent=2)
 
 def ask_for_token(code: str):
     """

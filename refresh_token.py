@@ -2,25 +2,46 @@ import json
 import time
 import requests
 from pathlib import Path
-
+from cos_init import cos_init
 # ================= 配置 =================
 CLIENT_ID = "AK20260123MIJKGM"
 CLIENT_SECRET = "2549734a740f7d74c1644ed5c9cb577c"
-TOKEN_FILE = Path("token.json")
+# 云函数挂载 COS 的本地路径
+COS_MOUNT_DIR = Path("/mnt/token")  # 这里是你 COS 挂载的本地目录
+TOKEN_FILE = COS_MOUNT_DIR / "token.json"
 REFRESH_URL = "https://openapi.wps.cn/oauth2/token"
+BUCKET_NAME = "auto-hr-1388169885"
+TOKEN_COS_PATH = "token/token.json"
 # ========================================
+# 确保目录存在
+COS_MOUNT_DIR.mkdir(parents=True, exist_ok=True)
 
 def load_token():
-    """从本地读取 token"""
+    """从 COS 挂载目录读取 token"""
     if not TOKEN_FILE.exists():
         return None
-    with open(TOKEN_FILE, "r", encoding="utf-8") as f:
+    with TOKEN_FILE.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-def save_token(token_data):
-    """保存 token 到本地"""
-    with open(TOKEN_FILE, "w", encoding="utf-8") as f:
-        json.dump(token_data, f, ensure_ascii=False, indent=2)
+def save_token(token_data: dict):
+    """
+    将 token 信息保存到 COS 对象存储中
+    """
+    
+    # JSON 序列化成字符串
+    body = json.dumps(token_data, ensure_ascii=False, indent=2)
+
+    client = cos_init()
+    # 上传到 COS
+    response = client.put_object(
+        Bucket=BUCKET_NAME,             # 要写入的桶，例如 "auto-hr-1388169885-xxxxx"
+        Key=f"{TOKEN_COS_PATH}",  # 在桶中的对象路径，例如 "token/token.json"
+        Body=body.encode("utf-8")       # 内容需转成二进制
+    )
+
+    # 返回上传结果
+    return response
+
 
 def token_expired(token_data):
     """判断 access_token 是否过期"""
@@ -55,17 +76,13 @@ def get_access_token():
     """获取有效的 access_token，如果过期则刷新"""
     token_data = load_token()
     if token_data is None:
-        raise ValueError("未找到 token.json，请先通过授权获取 code 并生成 token")
+        raise ValueError(f"未找到 token.json，请先通过授权获取 code 并生成 token。路径：{TOKEN_FILE}")
     
     if token_expired(token_data):
         print("🔄 Access token 已过期，正在刷新...")
-        try:
-            token_data = refresh_token(token_data["refresh_token"])
-            save_token(token_data)
-            print("✅ Token 已刷新")
-        except Exception as e:
-            print(f"❌ 刷新 token 失败: {e}")
-            raise   
+        token_data = refresh_token(token_data["refresh_token"])
+        save_token(token_data)
+        print("✅ Token 已刷新")
     else:
         print("✅ Access token 有效")
 
