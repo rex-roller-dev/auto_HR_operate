@@ -79,12 +79,12 @@ def get_access_token():
         raise ValueError(f"未找到 token.json，请先通过授权获取 code 并生成 token。路径：{TOKEN_FILE}")
     
     if token_expired(token_data):
-        print("🔄 Access token 已过期，正在刷新...")
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🔄 Access token 已过期，正在刷新...")
         token_data = refresh_token(token_data["refresh_token"])
         save_token(token_data)
-        print("✅ Token 已刷新")
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ Token 已刷新")
     else:
-        print("✅ Access token 有效")
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ Access token 有效")
 
     return token_data["access_token"], token_data["refresh_token"]
 

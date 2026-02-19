@@ -37,11 +37,11 @@ def worker():
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
         while True:
             data, request_id = task_queue.get()  # 阻塞等待
-            print(f"Received data before extract_body: {data}", flush=True)
+            # print(f"Received data before extract_body: {data}", flush=True)
             data = extract_body(data)
-            print(f"Received data after extract_body: {data}", flush=True)
+            # print(f"Received data after extract_body: {data}", flush=True)
             print(f"📥 收到任务，请求 ID: {request_id}", flush=True)
-            print(data,flush=True)
+            # print(data,flush=True)
 
             # 从环境变量获取 code（如果未设置则为 None）
             code = os.environ.get("CODE")
@@ -56,12 +56,12 @@ def worker():
                     # 根据需求决定是否退出程序
                     # sys.exit(1)
             else:
-                print(code)
-                print("⏭️ CODE 不存在或长度 ≤ 80，跳过 Token 获取步骤")
+                print(f"CODE: {code}")
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ⏭️ CODE 不存在或长度 ≤ 80，跳过 Token 获取步骤")
 
             err = None
             try:
-                print("🛠 开始处理任务",flush=True)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🛠 开始处理任务",flush=True)
                 # 0.刷新token
                 access_token, refresh_token = get_access_token()
                 # print(f"access_token:{access_token}, refresh_token:{refresh_token}", flush=True)
