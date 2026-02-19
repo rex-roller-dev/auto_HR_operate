@@ -7,7 +7,6 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.header import Header
 from email.utils import formataddr
-from listen_form_data import request_id
 
 from email_config import (
     SMTP_SERVER,

@@ -12,16 +12,18 @@ def write_to_file(text):
 
 @app.route("/event-invoke", methods=["POST"])
 def wps_callback():
-    global request_id
     # 获取请求头中的 X-Scf-Request-Id
     request_id = request.headers.get('X-Scf-Request-Id')
     print(f"📩 收到 WPS 数据，请求 ID: {request_id}")
 
     data: dict = request.get_json()
 
-    task_queue.put(data)
+    # ✅ 将请求 ID 与数据一起入队
+    task_queue.put((data, request_id))
     print("📥 数据已入队")
 
+    # 立即返回响应，让 WPS 知道回调成功
+    return jsonify({"bind_code": "20260123201242397174053"}), 200
 
 
 def write_to_file(text):#重定向输出到文件
