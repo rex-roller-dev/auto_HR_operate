@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/callback", methods=["POST"])
+@app.route("/event-invoke", methods=["POST"])
 def callback():
     # 打印一下，方便你调试后续正式数据
     try:
