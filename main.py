@@ -209,6 +209,8 @@ def worker():
 
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 任务处理完毕，等待下一个任务...", flush=True)
             task_queue.task_done()
+            print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 已完成任务，请求 ID: {request_id}", flush=True)
+            return jsonify({"bind_code": "20260123201242397174053"}), 200
     except Exception as e:
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ Worker 发生异常:", e, flush=True)
 

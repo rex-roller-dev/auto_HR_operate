@@ -1,6 +1,7 @@
+from time import time
 from flask import Flask, request, jsonify
 from queue import Queue
-
+from time import sleep
 app = Flask(__name__)
 
 # ✅ 全局唯一队列
@@ -21,8 +22,8 @@ def wps_callback():
     # ✅ 将请求 ID 与数据一起入队
     task_queue.put((data, request_id))
     print("📥 数据已入队")
-
-    # 立即返回响应，让 WPS 知道回调成功
+    sleep(30)  # 模拟处理时间
+    # 返回响应，让 WPS 知道回调成功
     return jsonify({"bind_code": "20260123201242397174053"}), 200
 
 
