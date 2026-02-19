@@ -184,7 +184,8 @@ def worker():
                         send_failure_email(
                             to_email=data["answerContents"][8]["value"],
                             name=data["answerContents"][0]["value"],
-                            exception=err
+                            exception=err,
+                            request_id=request_id
                         )
                         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📧 失败邮件已发送", flush=True)
                     else:

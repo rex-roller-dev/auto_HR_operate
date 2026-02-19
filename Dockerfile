@@ -21,5 +21,9 @@ COPY . .
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
+# 新增：复制绑定脚本
+COPY bind.sh /app/bind.sh
+RUN chmod +x /app/bind.sh
+
 # 容器启动时默认执行脚本
-CMD ["/app/start.sh"]
+# CMD ["/app/start.sh"]

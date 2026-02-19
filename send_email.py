@@ -98,7 +98,7 @@ def send_success_email(to_email: str, name: str):
         attachments=[str(stamped_pdf)]
     )
 
-def send_failure_email(to_email: str, name: str, exception: Exception):
+def send_failure_email(to_email: str, name: str, exception: Exception, request_id: str = None):
     """
     发送志愿服务时长审核失败邮件，包含失败原因。
 
@@ -106,7 +106,6 @@ def send_failure_email(to_email: str, name: str, exception: Exception):
     :param name: 收件人姓名
     :param exception: 审核失败或异常信息对象
     """
-    global request_id
     subject = "志愿服务时长审核异常通知"
     
     # 将异常信息转换为字符串，方便邮件显示
