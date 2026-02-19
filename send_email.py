@@ -7,6 +7,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.header import Header
 from email.utils import formataddr
+from listen_form_data import request_id
 
 from email_config import (
     SMTP_SERVER,
@@ -106,6 +107,7 @@ def send_failure_email(to_email: str, name: str, exception: Exception):
     :param name: 收件人姓名
     :param exception: 审核失败或异常信息对象
     """
+    global request_id
     subject = "志愿服务时长审核异常通知"
     
     # 将异常信息转换为字符串，方便邮件显示
@@ -116,7 +118,7 @@ def send_failure_email(to_email: str, name: str, exception: Exception):
 
 您的志愿服务时长审核未通过，出现以下异常情况：
 
-{error_msg}
+{error_msg}, 请求 ID: {request_id}。
 
 请核查提交信息或联系相关工作人员处理。
 """
