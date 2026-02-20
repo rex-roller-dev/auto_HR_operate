@@ -116,4 +116,5 @@ dependencies:
       - python-docx==1.2.0
       - reportlab==4.4.9
       - tqdm==4.67.3
+      - gunicorn
 prefix: /root/miniconda3/envs/auto_HR

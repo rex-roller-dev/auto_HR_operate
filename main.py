@@ -2,6 +2,8 @@ from datetime import datetime
 import re
 import shutil
 import threading
+
+import gunicorn
 from make_back_info import make_back_info
 from send_email import send_failure_email, send_success_email
 from task_queue import task_queue
@@ -38,6 +40,7 @@ def worker():
         while True:
             data, request_id = task_queue.get()  # 阻塞等待
             # print(f"Received data before extract_body: {data}", flush=True)
+            start_time = time.perf_counter()
             data = extract_body(data)
             # print(f"Received data after extract_body: {data}", flush=True)
             print(f"📥 收到任务，请求 ID: {request_id}", flush=True)
@@ -122,7 +125,7 @@ def worker():
                         finalmonth=end_date.month,
                         finalday=end_date.day
                     )
-                if len(data["answerContents"][-2]["value"]) >= 1 and data["answerContents"][-2]["value"][0] == "需要深大义工":
+                if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
                     # 从环境变量获取 COS 配置
                     COS_BUCKET = os.environ.get('COS_BUCKET')
                     COS_KEY = "2014-2021（完整版） .csv"  # 根据你在 COS 中的实际路径修改
@@ -209,6 +212,9 @@ def worker():
                     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 清理下载文件失败:", e, flush=True)
 
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 任务处理完毕，等待下一个任务...", flush=True)
+            end_time = time.perf_counter()
+            elapsed_time = end_time - start_time  # 运行时间（秒）
+            print(f"代码运行时间：{elapsed_time:.6f} 秒")
             task_queue.task_done()
     except Exception as e:
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ Worker 发生异常:", e, flush=True)
