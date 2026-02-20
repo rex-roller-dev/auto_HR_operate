@@ -22,9 +22,15 @@ def wps_callback():
     # ✅ 将请求 ID 与数据一起入队
     task_queue.put((data, request_id))
     print("📥 数据已入队")
-    sleep(30)  # 模拟处理时间
+    sleep(20)  # 模拟处理时间
     # 返回响应，让 WPS 知道回调成功
-    return jsonify({"bind_code": "20260123201242397174053"}), 200
+    return jsonify({
+    "code": 0,
+    "msg": "Success",
+    "data": {
+        "bind_code": "20260123201242397174053"
+    }
+}), 200
 
 
 def write_to_file(text):#重定向输出到文件

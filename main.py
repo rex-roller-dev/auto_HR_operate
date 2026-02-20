@@ -214,7 +214,7 @@ def worker():
             print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 任务处理完毕，等待下一个任务...", flush=True)
             end_time = time.perf_counter()
             elapsed_time = end_time - start_time  # 运行时间（秒）
-            print(f"代码运行时间：{elapsed_time:.6f} 秒")
+            print(f"代码运行时间：{elapsed_time:.6f} 秒",flush=True)
             task_queue.task_done()
     except Exception as e:
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ Worker 发生异常:", e, flush=True)
