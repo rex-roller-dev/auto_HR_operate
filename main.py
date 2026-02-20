@@ -50,7 +50,7 @@ def worker():
                 try:
                     ask_for_token(code)
                     print("✅ Token 已保存到 token.json")
-                    time.sleep(5)  # 等待文件写入完成
+                    # time.sleep(5)  # 等待文件写入完成
                 except Exception as e:
                     print(f"❌ 获取 Token 失败: {e}")
                     # 根据需求决定是否退出程序
@@ -62,6 +62,9 @@ def worker():
             err = None
             try:
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🛠 开始处理任务",flush=True)
+                print("\n" + "="*50 + "\n", flush=True)
+                print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 任务数据：{data}", flush=True)
+                print("\n" + "="*50 + "\n", flush=True)
                 # 0.刷新token
                 access_token, refresh_token = get_access_token()
                 # print(f"access_token:{access_token}, refresh_token:{refresh_token}", flush=True)
