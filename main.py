@@ -64,6 +64,17 @@ def worker():
 
             err = None
             try:
+                # -1.检查是否已经处理
+                # 幂等判断：检查并标记aid
+                from Duplicate_data_filtering import check_and_mark_aid
+                user_name = data["answerContents"][0].get("value", "") if len(data["answerContents"]) > 0 else ""
+                aid = data["aid"]
+                if check_and_mark_aid(aid, request_id, user_name):
+                    print(f"⚠️ 答卷 {aid} 已处理/处理中，跳过", flush=True)
+                    task_queue.task_done()
+                    continue
+
+
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🛠 开始处理任务",flush=True)
                 print("\n" + "="*50 + "\n", flush=True)
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 任务数据：{data}", flush=True)
