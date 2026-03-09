@@ -43,7 +43,7 @@ def volunteer_hours_verify(
             )
 
     # 3️⃣ iVolunteer
-    if contain_ivolunteer and cert_ivol_hours is not None:
+    if contain_ivolunteer or cert_ivol_hours is not None:
         if abs(cert_ivol_hours - ivolunteer_hours) > 1:
             raise HourMismatchError(
                 f"iVolunteer服务时长不匹配: 证书({cert_ivol_hours}) "
@@ -51,7 +51,7 @@ def volunteer_hours_verify(
             )
 
     # 4️⃣ 深大志愿
-    if contain_szu_volunteer and cert_szu_hours is not None:
+    if contain_szu_volunteer or cert_szu_hours is not None:
         if abs(cert_szu_hours - szu_volunteer_hours) > 1:
             raise HourMismatchError(
                 f"深圳大学志愿服务时长不匹配: 证书({cert_szu_hours}) "

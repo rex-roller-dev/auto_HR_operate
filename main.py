@@ -117,6 +117,8 @@ def worker():
 
                 # 2. 校验时间
                 form_data = parse_volunteer(file_links[0]["local_path"])
+                ivolunteer_hours = 0
+                szu_hours = 0
                 if form_data["start_date"] is None or form_data["end_date"] is None:
                     raise ValueError("开始日期或结束日期格式错误")
                 start_date = datetime.strptime(form_data["start_date"], "%Y-%m-%d").date()
