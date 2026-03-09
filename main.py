@@ -8,7 +8,7 @@ from make_back_info import make_back_info
 from send_email import send_failure_email, send_success_email
 from task_queue import task_queue
 # from download_file import download_file_from_wps
-from listen_form_data import app, task_queue
+from listen_form_data import task_queue
 from get_data_in_Certification_Form_text import parse_volunteer
 from get_data_in_szvolunteer_text import parse_szvolunteer
 from get_data_in_ivolunteer_file import parse_ivolunteer
@@ -24,6 +24,7 @@ from download_file_with_dive import download_file_from_wps_with_drive
 import os
 from ask_for_token import ask_for_token
 from extract_body import extract_body
+from flask import Flask, request, jsonify
 # 打开日志文件（追加模式）
 # log_file = open("log.txt", "a", encoding="utf-8")
 # sys.stdout = log_file
@@ -34,7 +35,23 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 downloads_dir = Path("downloads")
 
-def worker():
+app = Flask(__name__)
+
+@app.route("/event-invoke", methods=["POST"])
+def wps_callback():
+    # 获取请求头中的 X-Scf-Request-Id
+    request_id = request.headers.get('X-Scf-Request-Id')
+    print(f"📩 收到 WPS 数据，请求 ID: {request_id}")
+
+    data: dict = request.get_json()
+
+    # ✅ 将请求 ID 与数据一起入队
+    task_queue.put((data, request_id))
+    print("📥 数据已入队")
+    if "formTitle" in data and data["formTitle"] == "":
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ⚠️ formTitle 为空，直接返回绑定响应", flush=True)
+        return jsonify({"bind_code":"20260123201242397174053"}), 200    # 如果 formTitle 为空，直接返回绑定响应
+    
     try:
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🚀 Worker 启动，等待任务...",flush=True)
         while True:
@@ -220,7 +237,7 @@ def worker():
         print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ Worker 发生异常:", e, flush=True)
 
 if __name__ == "__main__":
-    t = threading.Thread(target=worker, daemon=True)
-    t.start()
+    # t = threading.Thread(target=worker, daemon=True)
+    # t.start()
 
     app.run(host="0.0.0.0", port=9000)
