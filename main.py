@@ -166,8 +166,8 @@ def worker():
                     volunteer_hours_verify(
                         certificate_data = form_data,
                         sz_volunteer_data = sz_data if len(file_links) > 1 and file_links[1]["link"] else None,
-                        ivolunteer_hours = ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else None,
-                        szu_volunteer_hours = szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else None,
+                        ivolunteer_hours = ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else 0,
+                        szu_volunteer_hours = szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
                         contain_ivolunteer = len(file_links) > 2 and file_links[2]["link"] is not None,
                         contain_szu_volunteer = len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工"
                     )
