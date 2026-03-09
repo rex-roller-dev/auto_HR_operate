@@ -9,3 +9,7 @@ class NameMismatchError(VolunteerVerifyError):
 
 class HourMismatchError(VolunteerVerifyError):
     pass
+
+class FileError(Exception):
+    """文件验证失败时抛出的错误"""
+    pass

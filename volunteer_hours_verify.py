@@ -1,7 +1,8 @@
 from exceptions import (
     VolunteerVerifyError,
     NameMismatchError,
-    HourMismatchError
+    HourMismatchError,
+    FileError
 )
 
 def volunteer_hours_verify(
@@ -23,6 +24,11 @@ def volunteer_hours_verify(
     cert_szu_hours = certificate_data['szu_volunteer_hours']
 
     # 1️⃣ 姓名
+    if sz_volunteer_data['姓名'] and sz_volunteer_data['义工号'] and sz_volunteer_data['服务时长'] is None:
+        raise  FileError(
+            f"志愿深圳数据错误，请从服务明细-导出明细中获取文件，详情请查看公众号"
+            )
+    
     if sz_volunteer_data['姓名'] != name:
         raise NameMismatchError(
             f"姓名不匹配: 证书({name}) vs 志愿深圳({sz_volunteer_data['姓名']})"
