@@ -7,6 +7,14 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.header import Header
 from email.utils import formataddr
+from exceptions import (
+    VolunteerVerifyError,
+    NameMismatchError,
+    szvHourMismatchError,
+    ivolHourMismatchError,
+    szuHourMismatchError,
+    FileError)
+
 
 from email_config import (
     SMTP_SERVER,
@@ -86,6 +94,9 @@ def send_success_email(to_email: str, name: str):
 
 您的志愿服务时长信息已核验通过，
 附件为已加盖公章的志愿服务证明文件，请查收。
+您可以自行打印并使用该证明文件进行相关申请或提交。
+
+如您不知道提交到哪里，请咨询要求您提交本文件的"相关部门"或"辅导员"
 
 如有疑问，请及时联系。
 """
@@ -110,13 +121,28 @@ def send_failure_email(to_email: str, name: str, exception: Exception, request_i
     
     # 将异常信息转换为字符串，方便邮件显示
     error_msg = str(exception) if exception else "未知错误"
+    if isinstance(exception, NameMismatchError):
+        Related_information = "请您检查您的志愿时长认证表，志愿深圳或i志愿上的姓名是否都一致，如果不一致，请您修改后再提交审核"
+    elif isinstance(exception, szvHourMismatchError):
+        Related_information = "请您检查您的志愿时长认证表，志愿深圳的服务时长是否正确，仅包括服务时长，请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
+    elif isinstance(exception, ivolHourMismatchError):
+        Related_information = "请您检查您的志愿时长认证表，i志愿上的服务时长是否正确，注意：请您在您的申请日期内剔除“志愿深圳”部分进行计算，那部分在志愿深圳中已经计算过，请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
+    elif isinstance(exception, szuHourMismatchError):
+        Related_information = "请您检查您的志愿时长认证表，深大义工的申请请您在表单后勾选相关的选项后填写您的学号，我们会为您查找并写上您的时长，深大义工系统于2021年已停用，22级及以后入学的同学请忽略“深大义工”部分义工时！，请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
+    elif isinstance(exception, FileError):
+         Related_information = "请您修改您的志愿时长认证表的文件类型，我们使用.docx格式作为标准的格式，志愿深圳和i志愿统一使用.pdf文件作为标准的格式，请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
+
     
+
     body = f"""
 {name} 同学，您好：
 
 您的志愿服务时长审核未通过，出现以下异常情况：
 
 {error_msg}, 请求 ID: {request_id}。
+
+重要提示：{Related_information if Related_information else ""}
+
 
 请核查提交信息或联系相关工作人员处理。
 """

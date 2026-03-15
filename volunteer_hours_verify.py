@@ -1,9 +1,11 @@
 from exceptions import (
     VolunteerVerifyError,
     NameMismatchError,
-    HourMismatchError,
-    FileError
-)
+    szvHourMismatchError,
+    ivolHourMismatchError,
+    szuHourMismatchError,
+    FileError)
+
 
 def volunteer_hours_verify(
     certificate_data: dict,
@@ -37,25 +39,25 @@ def volunteer_hours_verify(
     # 2️⃣ 志愿深圳
     if cert_sz_hours is not None:
         if abs(cert_sz_hours - sz_volunteer_data['服务时长']) > 1:
-            raise HourMismatchError(
-                f"志愿深圳服务时长不匹配: 证书({cert_sz_hours}) "
-                f"vs 志愿深圳({sz_volunteer_data['服务时长']})"
+            raise szvHourMismatchError(
+                f"志愿深圳服务时长不匹配: 深圳大学志愿时长认证表志愿深圳时长({cert_sz_hours}) "
+                f"vs 志愿深圳证明材料时长({sz_volunteer_data['服务时长']})"
             )
 
     # 3️⃣ iVolunteer
     if contain_ivolunteer or cert_ivol_hours is not None:
         if abs(cert_ivol_hours - ivolunteer_hours) > 1:
-            raise HourMismatchError(
-                f"iVolunteer服务时长不匹配: 证书({cert_ivol_hours}) "
-                f"vs iVolunteer({ivolunteer_hours})"
+            raise ivolHourMismatchError(
+                f"i志愿服务时长不匹配: 深圳大学志愿时长认证表i志愿时长({cert_ivol_hours}) "
+                f"vs i志愿证明材料时长({ivolunteer_hours})"
             )
 
     # 4️⃣ 深大志愿
     if contain_szu_volunteer or cert_szu_hours is not None:
         if abs(cert_szu_hours - szu_volunteer_hours) > 1:
-            raise HourMismatchError(
-                f"深圳大学志愿服务时长不匹配: 证书({cert_szu_hours}) "
-                f"vs 深圳大学({szu_volunteer_hours})"
+            raise szuHourMismatchError(
+                f"深大义工志愿服务时长不匹配: 深圳大学志愿时长认证表深大义工时长({cert_szu_hours}) "
+                f"vs 深大义工真实时长({szu_volunteer_hours})"
             )
 
     # 能走到这里 = 全部 OK

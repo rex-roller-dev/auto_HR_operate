@@ -7,9 +7,18 @@ class NameMismatchError(VolunteerVerifyError):
     pass
 
 
-class HourMismatchError(VolunteerVerifyError):
-    pass
+# class HourMismatchError(VolunteerVerifyError):
+#     pass
 
 class FileError(Exception):
     """文件验证失败时抛出的错误"""
+    pass
+
+class szvHourMismatchError(VolunteerVerifyError):
+    pass
+
+class ivolHourMismatchError(VolunteerVerifyError):
+    pass
+
+class szuHourMismatchError(VolunteerVerifyError):
     pass
