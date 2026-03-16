@@ -121,6 +121,7 @@ def send_failure_email(to_email: str, name: str, exception: Exception, request_i
     
     # 将异常信息转换为字符串，方便邮件显示
     error_msg = str(exception) if exception else "未知错误"
+    Related_information = None
     if isinstance(exception, NameMismatchError):
         Related_information = "请您检查您的志愿时长认证表，志愿深圳或i志愿上的姓名是否都一致，如果不一致，请您修改后再提交审核"
     elif isinstance(exception, szvHourMismatchError):
