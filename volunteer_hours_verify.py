@@ -38,7 +38,7 @@ def volunteer_hours_verify(
             )
 
     # 2️⃣ 志愿深圳
-    if cert_sz_hours is not None:
+    if cert_sz_hours is not None and sz_volunteer_data is not None:
         if abs(cert_sz_hours - sz_volunteer_data['服务时长']) > 1:
             raise szvHourMismatchError(
                 f"志愿深圳服务时长不匹配: 深圳大学志愿时长认证表志愿深圳时长({cert_sz_hours}) "
