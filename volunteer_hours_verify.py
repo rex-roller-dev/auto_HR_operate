@@ -25,6 +25,17 @@ def volunteer_hours_verify(
     cert_ivol_hours = certificate_data['i_volunteer_hours']
     cert_szu_hours = certificate_data['szu_volunteer_hours']
 
+    # 2. 定义所有可能出现的“点”字符
+    # 包括但不限于：中文间隔号、英文句号、英文间隔号、全角句号、半角句号等
+    dot_variants = ['·', '•', '.', '．', '・', '⋅']
+    
+    # 3. 将所有变体统一替换为标准的中文间隔号（或者直接去掉，看需求）
+    # 这里选择统一替换为中文间隔号 '·'
+    standard_dot = '·'
+    for dot in dot_variants:
+        if dot in name:
+            name = name.replace(dot, standard_dot)
+
     # 1️⃣ 姓名
     if sz_volunteer_data is not None:
         if sz_volunteer_data['姓名'] is None or sz_volunteer_data['义工号'] is None or sz_volunteer_data['服务时长'] is None:
