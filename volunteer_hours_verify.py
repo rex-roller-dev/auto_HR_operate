@@ -35,6 +35,8 @@ def volunteer_hours_verify(
     for dot in dot_variants:
         if dot in name:
             name = name.replace(dot, standard_dot)
+        if dot in sz_volunteer_data['姓名']:
+            sz_volunteer_data['姓名'] = sz_volunteer_data['姓名'].replace(dot, standard_dot)
 
     # 1️⃣ 姓名
     if sz_volunteer_data is not None:
