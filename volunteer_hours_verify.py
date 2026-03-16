@@ -54,7 +54,7 @@ def volunteer_hours_verify(
             )
 
     # 4️⃣ 深大志愿
-    if contain_szu_volunteer or cert_szu_hours is not None:
+    if contain_szu_volunteer and cert_szu_hours is not None:
         if abs(cert_szu_hours - szu_volunteer_hours) > 1:
             raise szuHourMismatchError(
                 f"深大义工志愿服务时长不匹配: 深圳大学志愿时长认证表深大义工时长({cert_szu_hours}) "
