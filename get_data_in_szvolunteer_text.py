@@ -24,6 +24,6 @@ def parse_szvolunteer(path: str) -> dict:
     return result
 
 if __name__ == "__main__":
-    path = r"D:\D\file\auto_HR_operate\downloads\志愿深圳工义详细表.pdf"
+    path = r"C:\Users\0\Desktop\志愿深圳时长证明(1).pdf"
     data = parse_szvolunteer(path)
     print(data)

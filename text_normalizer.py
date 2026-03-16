@@ -14,3 +14,17 @@ def normalize_text(text: str) -> str:
     text = re.sub(r"[ \t]+", " ", text)
 
     return text
+
+def name_nomalizer(name : str)->str:
+    # 2. 定义所有可能出现的“点”字符
+    # 包括但不限于：中文间隔号、英文句号、英文间隔号、全角句号、半角句号等
+    dot_variants = ['·', '•', '.', '．', '・', '⋅']
+    
+    # 3. 将所有变体统一替换为标准的中文间隔号（或者直接去掉，看需求）
+    # 这里选择统一替换为中文间隔号 '·'
+    standard_dot = '·'
+    for dot in dot_variants:
+        if dot in name:
+            name = name.replace(dot, standard_dot)
+        
+    return name
