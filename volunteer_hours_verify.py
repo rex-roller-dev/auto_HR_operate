@@ -5,6 +5,7 @@ from exceptions import (
     ivolHourMismatchError,
     szuHourMismatchError,
     FileError)
+from text_normalizer import name_nomalizer
 
 
 def volunteer_hours_verify(
@@ -19,30 +20,18 @@ def volunteer_hours_verify(
     校验通过：什么都不返回
     校验失败：raise 对应异常
     """
-    print(certificate_data,flush=True)
-    print(sz_volunteer_data,flush=True)
-    print(f"i志愿时长: {ivolunteer_hours}",flush=True)
-    print(f"深大义工时长: {szu_volunteer_hours}",flush=True)
-    print(f"是否包含i志愿: {contain_ivolunteer}",flush=True)
-    print(f"是否包含深大义工: {contain_szu_volunteer}",flush=True)
-    
+    # print(certificate_data,flush=True)
+    # print(sz_volunteer_data,flush=True)
+    # print(f"i志愿时长: {ivolunteer_hours}",flush=True)
+    # print(f"深大义工时长: {szu_volunteer_hours}",flush=True)
+    # print(f"是否包含i志愿: {contain_ivolunteer}",flush=True)
+    # print(f"是否包含深大义工: {contain_szu_volunteer}",flush=True)
+
     name = certificate_data['name']
     cert_sz_hours = certificate_data['volunteer_shenzhen_hours']
     cert_ivol_hours = certificate_data['i_volunteer_hours']
     cert_szu_hours = certificate_data['szu_volunteer_hours']
 
-    # 2. 定义所有可能出现的“点”字符
-    # 包括但不限于：中文间隔号、英文句号、英文间隔号、全角句号、半角句号等
-    dot_variants = ['·', '•', '.', '．', '・', '⋅']
-    
-    # 3. 将所有变体统一替换为标准的中文间隔号（或者直接去掉，看需求）
-    # 这里选择统一替换为中文间隔号 '·'
-    standard_dot = '·'
-    for dot in dot_variants:
-        if dot in name:
-            name = name.replace(dot, standard_dot)
-        if dot in sz_volunteer_data['姓名']:
-            sz_volunteer_data['姓名'] = sz_volunteer_data['姓名'].replace(dot, standard_dot)
 
     # 1️⃣ 姓名
     if sz_volunteer_data is not None:
@@ -50,6 +39,9 @@ def volunteer_hours_verify(
             raise  FileError(
                 f"志愿深圳数据错误，请从服务明细-导出明细中获取文件，详情请查看公众号"
                 )
+        
+        name = name_nomalizer(name)
+        sz_volunteer_data['姓名'] = name_nomalizer(sz_volunteer_data['姓名'])
     
         if sz_volunteer_data['姓名'] != name:
             raise NameMismatchError(
