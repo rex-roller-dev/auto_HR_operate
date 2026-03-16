@@ -22,3 +22,6 @@ class ivolHourMismatchError(VolunteerVerifyError):
 
 class szuHourMismatchError(VolunteerVerifyError):
     pass
+
+class timeValueError(VolunteerVerifyError):
+    pass

@@ -13,7 +13,8 @@ from exceptions import (
     szvHourMismatchError,
     ivolHourMismatchError,
     szuHourMismatchError,
-    FileError)
+    FileError,
+    timeValueError)
 
 
 from email_config import (
@@ -132,8 +133,8 @@ def send_failure_email(to_email: str, name: str, exception: Exception, request_i
         Related_information = "请您检查您的志愿时长认证表，深大义工的申请请您在表单后勾选相关的选项后填写您的学号，我们会为您查找并写上您的时长，深大义工系统于2021年已停用，22级及以后入学的同学请忽略“深大义工”部分义工时！，请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
     elif isinstance(exception, FileError):
          Related_information = "请您修改您的志愿时长认证表的文件类型，我们使用.docx格式作为标准的格式，志愿深圳和i志愿统一使用.pdf文件作为标准的格式，请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
-
-    
+    elif isinstance(exception, timeValueError):
+        Related_information = "请您检查您的志愿时长认证表，开始日期或结束日期的格式是否正确，标准格式为 xxxx 年 x 月 xx 日至  xxxx  年 x 月 xx 日，请您仔细阅读您的认证表，此处不应多字少字，另：请您仔细阅读公众号推文 https://mp.weixin.qq.com/s/4ottRxNg-5l1jSSZ2FLmHg 以及表单上方的提示后准备材料后提交"
 
     body = f"""
 {name} 同学，您好：

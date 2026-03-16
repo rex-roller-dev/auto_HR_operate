@@ -4,6 +4,7 @@ import shutil
 import threading
 
 import gunicorn
+from exceptions import timeValueError
 from make_back_info import make_back_info
 from send_email import send_failure_email, send_success_email
 from task_queue import task_queue
@@ -143,11 +144,11 @@ def wps_callback():
                 ivolunteer_hours = 0
                 szu_hours = 0
                 if form_data["start_date"] is None or form_data["end_date"] is None:
-                    raise ValueError("开始日期或结束日期格式错误")
+                    raise timeValueError("开始日期或结束日期格式错误")
                 start_date = datetime.strptime(form_data["start_date"], "%Y-%m-%d").date()
                 end_date = datetime.strptime(form_data["end_date"], "%Y-%m-%d").date()
                 if start_date > end_date:
-                    raise ValueError("开始日期不能晚于结束日期")
+                    raise timeValueError("开始日期不能晚于结束日期")
 
                 if len(file_links) > 1 and file_links[1]["link"]:
                     sz_data = parse_szvolunteer(file_links[1]["local_path"])
