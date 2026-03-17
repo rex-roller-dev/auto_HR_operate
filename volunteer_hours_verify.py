@@ -20,12 +20,14 @@ def volunteer_hours_verify(
     校验通过：什么都不返回
     校验失败：raise 对应异常
     """
-    # print(certificate_data,flush=True)
-    # print(sz_volunteer_data,flush=True)
-    # print(f"i志愿时长: {ivolunteer_hours}",flush=True)
-    # print(f"深大义工时长: {szu_volunteer_hours}",flush=True)
-    # print(f"是否包含i志愿: {contain_ivolunteer}",flush=True)
-    # print(f"是否包含深大义工: {contain_szu_volunteer}",flush=True)
+    print("================================================",flush=True)
+    print(certificate_data,flush=True)
+    print(sz_volunteer_data,flush=True)
+    print(f"i志愿时长: {ivolunteer_hours}",flush=True)
+    print(f"深大义工时长: {szu_volunteer_hours}",flush=True)
+    print(f"是否包含i志愿: {contain_ivolunteer}",flush=True)
+    print(f"是否包含深大义工: {contain_szu_volunteer}",flush=True)
+    print("================================================",flush=True)
 
     name = certificate_data['name']
     cert_sz_hours = certificate_data['volunteer_shenzhen_hours']
