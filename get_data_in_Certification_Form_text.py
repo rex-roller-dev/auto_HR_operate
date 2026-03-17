@@ -107,7 +107,7 @@ def parse_volunteer(path: str) -> dict:
     )
 
     i_volunteer_hours = find_first(
-        r"i志愿系统内[，,]?\s*([\d.]+)",
+        r"i.*?志愿系统内.*?([\d.]+)",  # .*? 匹配任意中间内容（非贪婪）
         text,
         float
     )
@@ -174,6 +174,6 @@ def parse_volunteer(path: str) -> dict:
 
 
 if __name__ == "__main__":
-    path = r"D:\D\file\auto_HR_operate\downloads\深圳大学志愿时认证表(58).docx"
+    path = r"C:\Users\20391\Desktop\test\testfile\nonetype - float\深圳大学志愿时认证表(236).docx"
     data = parse_volunteer(path)
     print(data)
