@@ -94,23 +94,26 @@ def parse_volunteer(path: str) -> dict:
     end_date = parse_date_flexible(end_raw) if end_raw else None
 
     # ===== 系统志愿时 =====
+    # 1. 深大义工系统
     szu_hours = find_first(
-        r"深大义工系统内[，,]?\s*([\d.]+)",
-        text,
-        float
-    )
+            r"深大义工系统内.*?([\d.]+)\s*(?:小时|个义工时|个志愿时)",
+            text,
+            float
+        )
 
+    # 2. 志愿深圳系统
     shenzhen_hours = find_first(
-        r"志愿深圳系统内[，,]?\s*([\d.]+)",
-        text,
-        float
-    )
+            r"志愿深圳系统内.*?([\d.]+)\s*(?:小时|个志愿时)",
+            text,
+            float
+        )
+
 
     i_volunteer_hours = find_first(
-        r"i.*?志愿系统内.*?([\d.]+)",  # .*? 匹配任意中间内容（非贪婪）
-        text,
-        float
-    )
+            r"[iI]志愿系统内.*?([\d.]+)\s*个志愿时",
+            text,
+            float
+        )
 
     # ===== 广东省外志愿（最多两组）=====
     external_matches = re.findall(
