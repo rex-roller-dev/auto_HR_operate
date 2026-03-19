@@ -150,6 +150,12 @@ def wps_callback():
                 if start_date > end_date:
                     raise timeValueError("开始日期不能晚于结束日期")
 
+                sz_data = {
+                "姓名" : None,
+                "义工号" : None,
+                "服务时长" : None
+                }
+
                 if len(file_links) > 1 and file_links[1]["link"]:
                     sz_data = parse_szvolunteer(file_links[1]["local_path"])
                 if len(file_links) > 2 and file_links[2]["link"]: 
@@ -176,8 +182,8 @@ def wps_callback():
                             
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📊 解析结果：", flush=True)
                 print("表格数据：", form_data, flush=True)
-                if len(file_links) > 1 and file_links[1]["link"]:
-                    print("志愿深圳数据：", sz_data, flush=True)
+                # if len(file_links) > 1 and file_links[1]["link"]:
+                print("志愿深圳数据：", sz_data, flush=True)
                 if len(file_links) > 2 and file_links[2]["link"]:
                     print("i志愿总时长：", ivolunteer_hours, flush=True)
                 if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
@@ -185,7 +191,7 @@ def wps_callback():
 
                 volunteer_hours_verify(
                     certificate_data = form_data,
-                    sz_volunteer_data = sz_data if len(file_links) > 1 and file_links[1]["link"] else None,
+                    sz_volunteer_data = sz_data,
                     ivolunteer_hours = ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else 0,
                     szu_volunteer_hours = szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
                     contain_ivolunteer = len(file_links) > 2 and file_links[2]["link"] is not None,
