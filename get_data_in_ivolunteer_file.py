@@ -14,12 +14,12 @@ def pdfclean(pos, page):
         current_page = pdf.pages[page]
         text = current_page.extract_text()
         datalist = re.split(r'[ \n]+', text)
-        #print(datalist)
         return datalist
-    
+
+
 def pdfclean_all_pages(path):
     """
-    读取 PDF 所有页，返回合并后的字符串列表
+    读取 PDF 所有页，返回合并后的字符串列表（预处理：去除空字符串、统一空格）
     """
     all_data = []
     with pdfplumber.open(path) as pdf:
@@ -27,7 +27,9 @@ def pdfclean_all_pages(path):
             text = page.extract_text()
             if not text:
                 continue
-            data = re.split(r'[ \n]+', text)
+            # 先替换全角空格，再分割，最后去空
+            text = text.replace('　', ' ').strip()
+            data = [item.strip() for item in re.split(r'[ \n]+', text) if item.strip()]
             all_data.extend(data)
     return all_data
 
@@ -35,168 +37,183 @@ def pdfclean_all_pages(path):
 def is_valid_time_format(data):
     """
     判断是否是合法的时间格式：
-    - 1小时 / 2小时30分钟 / 3时40分 / 25分钟 / 5分 / 48分
+    - 1小时 / 2小时30分钟 / 3时40分 / 25分钟 / 5分 / 48分 / 1时4分（兼容不规范格式）
     """
     return bool(
-        re.match(r"^\d+(小时|时)(\d+(分钟|分))?$", data)  # **匹配 "X小时Y分钟" / "X时Y分"**
-        or re.match(r"^\d+(小时|时)$", data)              # **匹配 "X小时" / "X时"**
-        or re.match(r"^\d+(分钟|分)$", data)              # **匹配 "X分钟" / "X分"（解决 48分 被删）**
+        re.match(r"^\d+(小时|时)(\d+(分钟|分))?$", data)  # X小时Y分钟 / X时Y分
+        or re.match(r"^\d+(小时|时)$", data)              # X小时 / X时
+        or re.match(r"^\d+(分钟|分)$", data)              # X分钟 / X分
     )
+
+
+def is_valid_date(data):
+    """判断是否是合法的日期格式：YYYY.MM.DD"""
+    if not re.match(r"^\d{4}\.\d{2}\.\d{2}$", data):
+        return False
+    try:
+        datetime.strptime(data, "%Y.%m.%d")
+        return True
+    except ValueError:
+        return False
+
+
+def is_valid_source(data):
+    """判断是否是合法的来源（统一处理空格）"""
+    data = data.replace(' ', '')  # 去除来源中的空格（如“志愿 深圳”→“志愿深圳”）
+    return any(key in data for key in ["i志愿", "志愿深圳", "志愿中山", "江门义工"])
 
 
 def clean_shortlist(shortlist):
     """
-    以「至」为分组标志，按规则生成元组：
-    - 至的前一个元素 = 活动开始时间（元组第1位）
-    - 至的后一个元素 = 服务时长（元组第2位）
-    - 至的后第二个元素 = 数据来源（元组第3位）
+    优化版：以「至」为分组标志，严格校验前后元素类型，生成合法元组
+    规则：
+    - 至的前一个元素 = 活动开始时间（必须是YYYY.MM.DD格式）
+    - 至的后一个元素 = 服务时长（必须符合时间格式）
+    - 至的后第二个元素 = 数据来源（必须是合法来源）
     """
     cleaned_list = []
-    # 遍历整个列表，找到所有的「至」的索引
-    for idx, data in enumerate(shortlist):
-        if data.strip() == "至":
-            # 按你的规则取元素：至的前1、后1、后2
-            start_time = shortlist[idx - 1]
-            duration = shortlist[idx + 1]
-            source = shortlist[idx + 2]
-            # 拼成你要的元组，加到结果里
-            cleaned_list.append((start_time, duration, source))
+    # 先统一处理元素（去空格、替换全角字符）
+    processed_list = [item.replace(' ', '').strip() for item in shortlist if item.strip()]
+    
+    # 遍历所有“至”的索引，校验前后元素
+    for idx, data in enumerate(processed_list):
+        if data != "至":
+            continue
+        # 确保索引不越界
+        if idx - 1 < 0 or idx + 1 >= len(processed_list) or idx + 2 >= len(processed_list):
+            continue
+        # 提取候选元素并校验类型
+        start_time_candidate = processed_list[idx - 1]
+        duration_candidate = processed_list[idx + 1]
+        source_candidate = processed_list[idx + 2]
+        
+        # 严格校验：前是日期、后1是时长、后2是来源
+        if (is_valid_date(start_time_candidate) 
+            and is_valid_time_format(duration_candidate) 
+            and is_valid_source(source_candidate)):
+            # 统一来源格式（去空格）
+            source_candidate = source_candidate.replace(' ', '')
+            cleaned_list.append((start_time_candidate, duration_candidate, source_candidate))
     
     return cleaned_list
 
 
 def dataclean(datalist):
     """
-    清洗数据，筛选出有效的时间、时长、志愿组织等信息
-    
-    :param datalist: 待处理的字符串列表
-    :return: 处理后的字符串列表，每 3 个元素为一组（时间、时长、组织）
+    清洗数据，筛选出有效的时间、时长、志愿组织等信息（优化版）
     """
-    shortlist =[]
-    # shortlist1=[]
+    # 第一步：初步筛选（保留日期、时长、来源、至）
+    shortlist = []
     for data in datalist:
-        if ("小时" in data or "分钟" in data or "i志愿" in data or "志愿深圳" in data or '志愿中山' in data or "江门义工" in data or
-                re.match(r"\d{4}\.\d{2}\.\d{2}", data) or "时" in data or "分" in data or "至" in data):
-            shortlist.append(data)
+        data_stripped = data.strip()
+        if (is_valid_date(data_stripped) 
+            or is_valid_time_format(data_stripped) 
+            or is_valid_source(data_stripped) 
+            or data_stripped == "至"):
+            shortlist.append(data_stripped)
+    
+    # 第二步：过滤掉包含“i志愿”但不是“i志愿”本身的元素（如“i志愿123”）
     shortlist = [data for data in shortlist if not (data != "i志愿" and "i志愿" in data)]
-    #删除可能存在的i志愿关键字
-    # print(shortlist)
-    shortlist = [data for data in shortlist if is_valid_time_format(data) or
-                 ("时" not in data and "分" not in data)]
-    #删除可能存在的的时间关键字
-    # print(shortlist)
-    shortlist = [data for data in shortlist if not (
-            (match := re.match(r"\d{4}\.\d{2}\.\d{2}", data)) and data != match.group()
-    )]  # 删除名称中可能存在的年份时间关键字
+    
+    # 第三步：生成合法元组
     shortlist = clean_shortlist(shortlist)
-    #读取到的数据有问题，是“开始时间”“服务时长”“志愿组织”“结束时间”，pop掉最后一个结束时间
-    # print(shortlist) #测试
-
-    for i in range(len(shortlist)-1, -1, -1):
-        if len(shortlist[i]) >= 3 and "志愿深圳" in shortlist[i][2]:
-            shortlist.pop(i)
-
-    # for i in range(0, len(shortlist), 3):  # 每 3 个元素一组
-    #     if i + 2 < len(shortlist):  # 确保不会超出索引范围
-    #         shortlist1.append((shortlist[i], shortlist[i + 1], shortlist[i + 2]))   # 变成元组，契合后面ai写的代码。
-    # print(shortlist) #测试
+    
+    # 第四步：过滤掉来源为“志愿深圳”的条目（保留i志愿/志愿中山/江门义工）
+    shortlist = [item for item in shortlist if "志愿深圳" not in item[2]]
+    
     return shortlist
 
 
-def is_valid_date(date_str, base_year,base_month,base_date,finalyear,finalmonth,finalday):
+def is_valid_date_range(date_str, base_year, base_month, base_date, final_year, final_month, final_day):
     """
-    is_valid_date 的 Docstring
-    说明：检查给定的日期字符串是否在指定的基准日期范围内。
-    
-    :param date_str: 日期字符串，格式为 'YYYY.MM.DD'
-    :param base_year: 基准年份
-    :param base_month: 基准月份
-    :param base_date: 基准日期
-    :param finalyear: 最终年份
-    :param finalmonth: 最终月份
-    :param finalday: 最终日期
+    检查给定的日期字符串是否在指定的基准日期范围内
     """
-    try:
-        if not date_str or not re.match(r"\d{4}\.\d{2}\.\d{2}", date_str):
-            return False
-        # 解析日期格式：2021.09.01
-        date = datetime.strptime(date_str, "%Y.%m.%d")
-        # 对比基准日期
-        base_date = datetime(base_year,base_month, base_date)
-        final_date = datetime(finalyear,finalmonth,finalday)
-        return base_date <= date <= final_date
-    except ValueError:
+    if not is_valid_date(date_str):
         return False
+    date = datetime.strptime(date_str, "%Y.%m.%d")
+    base_date = datetime(base_year, base_month, base_date)
+    final_date = datetime(final_year, final_month, final_day)
+    return base_date <= date <= final_date
 
 
-def sum_data(shortlist, base_year,base_month,base_date,finalyear,finalmonth,finalday):
+def parse_duration(duration_str):
+    """
+    解析时长字符串为分钟数（兼容所有合法格式）
+    支持：1小时、2时30分、48分、1时4分等
+    """
+    hours = 0
+    minutes = 0
+    
+    # 匹配 X小时Y分钟 / X时Y分
+    match = re.match(r"^(\d+)(小时|时)(\d+)(分钟|分)$", duration_str)
+    if match:
+        hours = int(match.group(1))
+        minutes = int(match.group(3))
+        return hours * 60 + minutes
+    
+    # 匹配 X小时 / X时
+    match = re.match(r"^(\d+)(小时|时)$", duration_str)
+    if match:
+        hours = int(match.group(1))
+        return hours * 60
+    
+    # 匹配 X分钟 / X分
+    match = re.match(r"^(\d+)(分钟|分)$", duration_str)
+    if match:
+        minutes = int(match.group(1))
+        return minutes
+    
+    return 0  # 无效格式返回0
+
+
+def sum_data(shortlist, base_year, base_month, base_date, final_year, final_month, final_day):
+    """
+    计算指定日期范围内的总时长（分钟）
+    """
     total_minutes = 0
-    hours=0
-    minutes=0
     for item in shortlist:
         if len(item) != 3:
             continue
-
-        time_range, duration, source = item
-
-
-        # 解析开始日期
-        start_date = time_range.strip()
-
-        # 筛选条件2：日期检查
-        if not is_valid_date(start_date, base_year,base_month,base_date,finalyear,finalmonth,finalday):
+        start_date, duration, source = item
+        
+        # 日期范围过滤
+        if not is_valid_date_range(start_date, base_year, base_month, base_date, final_year, final_month, final_day):
             continue
-    #如果时间大于base小于final就把他算进去
-        hours = 0
-        minutes = 0
-        # 解析时长
-        time_match = re.match(r"(\d+)(小时|时)(\d+)(分钟|分)", duration)
-
-        if time_match:
-            hours = int(time_match.group(1))
-            if time_match.group(3):
-                minutes = int(time_match.group(3)) if time_match.group(3) else 0
-
-        else:
-            time_match=re.match(r"(\d+)(小时|时)",duration)
-            if time_match:
-                hours = int(time_match.group(1))
-
-            else:
-                time_match=re.match(r"(\d+)(分钟|分)?",duration)
-                if time_match:
-                    minutes = int(time_match.group(1))
-
-        total_minutes += hours * 60 + minutes
+        
+        # 解析时长并累加
+        total_minutes += parse_duration(duration)
+    
     return total_minutes
 
-def parse_ivolunteer(path : str, finalyear : int, base_year : int, base_month : int = 9, base_date : int = 1, finalmonth : int = 8, finalday : int = 31) -> float:
-    """
-    parse_ivolunteer 的 Docstring
 
-    说明：计算指定 PDF 文件中在给定日期范围内的总志愿服务时长（小时）。
+def parse_ivolunteer(path: str, final_year: int, base_year: int, base_month: int = 9, base_date: int = 1,
+                     final_month: int = 8, final_day: int = 31) -> float:
+    """
+    计算指定 PDF 文件中在给定日期范围内的总志愿服务时长（小时）
 
     :param path: PDF 文件路径
     :param base_year: 基准年份
     :param base_month: 基准月份
     :param base_date: 基准日期
-    :param finalyear: 最终年份
-    :param finalmonth: 最终月份
-    :param finalday: 最终日期
+    :param final_year: 最终年份
+    :param final_month: 最终月份
+    :param final_day: 最终日期
+    :return: 总时长（小时）
     """
+    # 1. 读取PDF所有页数据
     datalist = pdfclean_all_pages(path)
-    # print(datalist) #测试
+    # 2. 数据清洗
     shortlist = dataclean(datalist)
-    # print(shortlist) #测试
-    total_minutes = sum_data(shortlist, base_year,base_month,base_date,finalyear,finalmonth,finalday)
+    # 3. 计算符合日期范围的总时长
+    total_minutes = sum_data(shortlist, base_year, base_month, base_date, final_year, final_month, final_day)
+    # 4. 转换为小时
     total_hours = total_minutes / 60
     return total_hours
 
+
 if __name__ == "__main__":
-    path = r"C:\Users\20391\Desktop\服务时间证书(58)(1).pdf"
-    # datalist = pdfclean(path, 0)
-    # shortlist = dataclean(datalist)
-    # total_minutes = sum_data(shortlist, 2021,1,1,2025,12,31)
-    # total_hours = total_minutes / 60
-    total_hours = parse_ivolunteer(path, 2024, 2019, 9, 11, 7, 3)
-    print(f"总志愿时长：{total_hours} 小时")
+    # 测试示例
+    path = r"C:\Users\20391\Desktop\i志愿服务证明.pdf"
+    # 参数说明：path, 最终年份, 基准年份, 基准月, 基准日, 最终月, 最终日
+    total_hours = parse_ivolunteer(path, 2024, 2019, 9, 1, 8, 31)
+    print(f"总志愿时长：{total_hours:.2f} 小时")
