@@ -213,7 +213,8 @@ def parse_ivolunteer(path: str, final_year: int, base_year: int, base_month: int
 
 if __name__ == "__main__":
     # 测试示例
-    path = r"C:\Users\20391\Desktop\i志愿服务证明.pdf"
+    path = r"C:\Users\20391\Desktop\i志愿服务证明(4).pdf"
     # 参数说明：path, 最终年份, 基准年份, 基准月, 基准日, 最终月, 最终日
-    total_hours = parse_ivolunteer(path, 2024, 2019, 9, 1, 8, 31)
+    total_hours = parse_ivolunteer(path, 2026, 2023, 9, 1, 3, 21)
+
     print(f"总志愿时长：{total_hours:.2f} 小时")

@@ -161,12 +161,12 @@ def wps_callback():
                 if len(file_links) > 2 and file_links[2]["link"]: 
                     ivolunteer_hours = parse_ivolunteer(
                         file_links[2]["local_path"],
-                        finalyear=end_date.year,
+                        final_year=end_date.year,
                         base_year=start_date.year,
                         base_month=start_date.month,
                         base_date=start_date.day,
-                        finalmonth=end_date.month,
-                        finalday=end_date.day
+                        final_month=end_date.month,
+                        final_day=end_date.day
                     )
                 if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
                     # 从环境变量获取 COS 配置

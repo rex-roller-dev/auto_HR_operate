@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 from text_loader import extract_text
 from typing import Optional
@@ -177,6 +178,8 @@ def parse_volunteer(path: str) -> dict:
 
 
 if __name__ == "__main__":
-    path = r"C:\Users\20391\Desktop\test\testfile\nonetype - float\深圳大学志愿时认证表(236).docx"
+    path = r"C:\Users\20391\Desktop\深圳大学志愿时认证表(309).docx"
     data = parse_volunteer(path)
+    end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+    print(end_date.year)
     print(data)
