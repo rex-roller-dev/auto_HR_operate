@@ -65,34 +65,85 @@ def is_valid_source(data):
 
 def clean_shortlist(shortlist):
     """
-    优化版：以「至」为分组标志，严格校验前后元素类型，生成合法元组
-    规则：
-    - 至的前一个元素 = 活动开始时间（必须是YYYY.MM.DD格式）
-    - 至的后一个元素 = 服务时长（必须符合时间格式）
-    - 至的后第二个元素 = 数据来源（必须是合法来源）
+    优化版：以「至」为分组标志，按「内容匹配+距离最近」原则提取元素
     """
     cleaned_list = []
     # 先统一处理元素（去空格、替换全角字符）
     processed_list = [item.replace(' ', '').strip() for item in shortlist if item.strip()]
     
-    # 遍历所有“至”的索引，校验前后元素
+    # 定义来源列表（用于精确匹配）
+    source_keywords = ["i志愿", "志愿深圳", "志愿中山", "江门义工"]
+    
+    # 遍历所有“至”的索引
     for idx, data in enumerate(processed_list):
         if data != "至":
             continue
-        # 确保索引不越界
-        if idx - 1 < 0 or idx + 1 >= len(processed_list) or idx + 2 >= len(processed_list):
-            continue
-        # 提取候选元素并校验类型
-        start_time_candidate = processed_list[idx - 1]
-        duration_candidate = processed_list[idx + 1]
-        source_candidate = processed_list[idx + 2]
+            
+        # --------------------------
+        # 1. 找 start_time_candidate：至前面最近的日期 (YYYY.MM.DD)
+        # --------------------------
+        start_time_candidate = None
+        # 从 idx-1 往前遍历到 0，找到第一个符合的就停止
+        for j in range(idx - 1, -1, -1):
+            if is_valid_date(processed_list[j]):
+                start_time_candidate = processed_list[j]
+                break
         
-        # 严格校验：前是日期、后1是时长、后2是来源
-        if (is_valid_date(start_time_candidate) 
-            and is_valid_time_format(duration_candidate) 
-            and is_valid_source(source_candidate)):
-            # 统一来源格式（去空格）
-            source_candidate = source_candidate.replace(' ', '')
+        # --------------------------
+        # 2. 找 duration_candidate：至前后最近的时长 (包含小时/时/分钟/分)
+        # --------------------------
+        duration_candidate = None
+        min_distance = float('inf')
+        
+        # 先往前找
+        for j in range(idx - 1, -1, -1):
+            if is_valid_time_format(processed_list[j]):
+                dist = idx - j
+                if dist < min_distance:
+                    min_distance = dist
+                    duration_candidate = processed_list[j]
+                break # 往前找第一个就是最近的，不用继续
+        
+        # 再往后找，对比距离
+        for j in range(idx + 1, len(processed_list)):
+            if is_valid_time_format(processed_list[j]):
+                dist = j - idx
+                if dist < min_distance:
+                    min_distance = dist
+                    duration_candidate = processed_list[j]
+                break # 往后找第一个就是最近的，不用继续
+        
+        # --------------------------
+        # 3. 找 source_candidate：至前后最近的来源 (在指定列表中)
+        # --------------------------
+        source_candidate = None
+        min_source_dist = float('inf')
+        
+        # 往前找
+        for j in range(idx - 1, -1, -1):
+            if processed_list[j] in source_keywords:
+                dist = idx - j
+                if dist < min_source_dist:
+                    min_source_dist = dist
+                    source_candidate = processed_list[j]
+                break
+        
+        # 往后找
+        for j in range(idx + 1, len(processed_list)):
+            if processed_list[j] in source_keywords:
+                dist = j - idx
+                if dist < min_source_dist:
+                    min_source_dist = dist
+                    source_candidate = processed_list[j]
+                break
+        
+        # --------------------------
+        # 最终校验 & 入库
+        # --------------------------
+        if (start_time_candidate 
+            and duration_candidate 
+            and source_candidate 
+            and "志愿深圳" not in source_candidate):
             cleaned_list.append((start_time_candidate, duration_candidate, source_candidate))
     
     return cleaned_list
@@ -186,7 +237,7 @@ def sum_data(shortlist, base_year, base_month, base_date, final_year, final_mont
     return total_minutes
 
 
-def parse_ivolunteer(path: str, final_year: int, base_year: int, base_month: int = 9, base_date: int = 1,
+def     parse_ivolunteer(path: str, final_year: int, base_year: int, base_month: int = 9, base_date: int = 1,
                      final_month: int = 8, final_day: int = 31) -> float:
     """
     计算指定 PDF 文件中在给定日期范围内的总志愿服务时长（小时）
@@ -202,8 +253,10 @@ def parse_ivolunteer(path: str, final_year: int, base_year: int, base_month: int
     """
     # 1. 读取PDF所有页数据
     datalist = pdfclean_all_pages(path)
+    # print("原始数据：", datalist)  # 调试输出原始数据
     # 2. 数据清洗
     shortlist = dataclean(datalist)
+    # print("清洗后的数据：", shortlist)  # 调试输出清洗后的数据
     # 3. 计算符合日期范围的总时长
     total_minutes = sum_data(shortlist, base_year, base_month, base_date, final_year, final_month, final_day)
     # 4. 转换为小时
@@ -213,8 +266,9 @@ def parse_ivolunteer(path: str, final_year: int, base_year: int, base_month: int
 
 if __name__ == "__main__":
     # 测试示例
-    path = r"C:\Users\20391\Desktop\i志愿服务证明(4).pdf"
+    path = r"C:\Users\20391\Desktop\test\testfile\三个——正确\i志愿-王佳豪.pdf"
     # 参数说明：path, 最终年份, 基准年份, 基准月, 基准日, 最终月, 最终日
-    total_hours = parse_ivolunteer(path, 2026, 2023, 9, 1, 3, 21)
+    total_hours = parse_ivolunteer(path, 2024, 2019, 9, 1, 10, 9)
 
     print(f"总志愿时长：{total_hours:.2f} 小时")
+    # dataclean(['2023.08.21', '15小时44分', '至', 'i志愿', '2023.08.22'])
