@@ -184,10 +184,10 @@ def wps_callback():
                 print("表格数据：", form_data, flush=True)
                 # if len(file_links) > 1 and file_links[1]["link"]:
                 print("志愿深圳数据：", sz_data, flush=True)
-                if len(file_links) > 2 and file_links[2]["link"]:
-                    print("i志愿总时长：", ivolunteer_hours, flush=True)
-                if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
-                    print("深大义工总时长：", szu_hours, flush=True)
+                # if len(file_links) > 2 and file_links[2]["link"]:
+                print("i志愿总时长：", ivolunteer_hours, flush=True)
+                # if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工":
+                print("深大义工总时长：", szu_hours, flush=True)
 
                 volunteer_hours_verify(
                     certificate_data = form_data,
