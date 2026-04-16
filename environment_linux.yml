@@ -104,7 +104,7 @@ dependencies:
   - zstd=1.5.7
   - pip:
       - cos-python-sdk-v5
-      - cryptography==46.0.4
+      - cryptography
       - docx2pdf==0.1.8
       - git-filter-repo==2.47.0
       - lxml==6.0.2
