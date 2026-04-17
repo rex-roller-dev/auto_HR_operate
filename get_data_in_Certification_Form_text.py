@@ -4,14 +4,9 @@ from text_loader import extract_text
 from typing import Optional
 from text_normalizer import normalize_text
 
-def find_first(pattern: str, text: str, cast=None) -> Optional[object]:
-    """
-    正则工具函数
-    - 找不到 -> None
-    - 找到但为空 -> None
-    - cast 用于 int / float 转换
-    """
-    m = re.search(pattern, text, re.S)
+def find_first(pattern: str, text: str, cast=None, allow_multiline=True) -> Optional[object]:
+    flags = re.S if allow_multiline else 0  # 只有允许跨行时才加 re.S
+    m = re.search(pattern, text, flags)
     if not m:
         return None
     value = m.group(1).strip()
@@ -97,23 +92,26 @@ def parse_volunteer(path: str) -> dict:
     # ===== 系统志愿时 =====
     # 1. 深大义工系统
     szu_hours = find_first(
-            r"深大义工系统内.*?([\d.]+)\s*(?:小时|个义工时|个志愿时)",
-            text,
-            float
-        )
+        r"深大义工系统内.*?([\d.]+)\s*(?:小时|个义工时|个志愿时)",
+        text,
+        float,
+        allow_multiline=False  # 这里设为 False，正则就不会跨行
+    )
 
     # 2. 志愿深圳系统
     shenzhen_hours = find_first(
             r"志愿深圳系统内.*?([\d.]+)\s*(?:小时|个志愿时)",
             text,
-            float
+            float,
+            allow_multiline=False
         )
 
 
     i_volunteer_hours = find_first(
             r"[iI]志愿系统内.*?([\d.]+)\s*个志愿时",
             text,
-            float
+            float,
+            allow_multiline=False
         )
 
     # ===== 广东省外志愿（最多两组）=====
@@ -178,7 +176,7 @@ def parse_volunteer(path: str) -> dict:
 
 
 if __name__ == "__main__":
-    path = r"C:\Users\20391\Desktop\深圳大学志愿时认证表(309).docx"
+    path = r"C:\Users\0\Desktop\test\识别错误.docx"
     data = parse_volunteer(path)
     end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
     print(end_date.year)
