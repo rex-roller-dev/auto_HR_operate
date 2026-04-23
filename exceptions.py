@@ -25,3 +25,7 @@ class szuHourMismatchError(VolunteerVerifyError):
 
 class timeValueError(VolunteerVerifyError):
     pass
+
+class VolunteerFileError(Exception):
+    """志愿时文件处理的基类异常"""
+    pass

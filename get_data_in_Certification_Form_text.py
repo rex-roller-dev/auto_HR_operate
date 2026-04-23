@@ -160,9 +160,9 @@ def parse_volunteer(path: str) -> dict:
         "start_date": start_date,
         "end_date": end_date,
 
-        "szu_volunteer_hours": normalize(szu_hours),
-        "volunteer_shenzhen_hours": normalize(shenzhen_hours),
-        "i_volunteer_hours": normalize(i_volunteer_hours),
+        "szu_volunteer_hours": normalize(szu_hours) if szu_hours is not None else 0,
+        "volunteer_shenzhen_hours": normalize(shenzhen_hours) if shenzhen_hours is not None else 0,
+        "i_volunteer_hours": normalize(i_volunteer_hours) if i_volunteer_hours is not None else 0,
 
         "external_system_1": external_system_1,
         "external_system_1_hours": normalize(external_system_1_hours),
@@ -176,7 +176,7 @@ def parse_volunteer(path: str) -> dict:
 
 
 if __name__ == "__main__":
-    path = r"C:\Users\0\Desktop\test\识别错误.docx"
+    path = r"D:\D\file\auto_hr\test\none\深圳大学志愿时认证表__20260422235450(1).docx"
     data = parse_volunteer(path)
     end_date = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
     print(end_date.year)
