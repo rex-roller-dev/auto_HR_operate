@@ -198,7 +198,7 @@ def write_verify_result(
     write_row = active["row_to"] + 1
     编号 = 18180000 + write_row
 
-    状态 = "待人工审核" if exception is None else f"异常：{exception}"
+    状态 = "已盖章" if exception is None else f"异常：{exception}"
 
     # 示例附件（你后面可以按 title 对应）
     word_links = answers.get("深圳大学志愿时认证表Word", [])
