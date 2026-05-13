@@ -18,7 +18,7 @@ def parse_szvolunteer(path: str) -> dict:
     result = {
         "姓名": name.group(1) if name else None,
         "义工号": volunteer_id.group(2) if volunteer_id else None,
-        "服务时长": float(service_time.group(1)) if service_time else None
+        "服务时长": float(service_time.group(1)) if service_time else 0
     }
 
     return result
