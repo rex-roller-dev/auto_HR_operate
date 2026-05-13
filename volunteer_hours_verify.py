@@ -37,7 +37,7 @@ def volunteer_hours_verify(
 
     # 1️⃣ 姓名
     if sz_volunteer_data is not None:
-        if sz_volunteer_data['姓名'] is None or sz_volunteer_data['义工号'] is None or sz_volunteer_data['服务时长'] is None:
+        if sz_volunteer_data['姓名'] is None or sz_volunteer_data['义工号'] is None:
             raise  FileError(
                 f"志愿深圳数据错误，请从服务明细-导出明细中获取文件，详情请查看公众号"
                 )

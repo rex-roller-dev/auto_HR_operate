@@ -153,7 +153,7 @@ def wps_callback():
                 sz_data = {
                 "姓名" : None,
                 "义工号" : None,
-                "服务时长" : None
+                "服务时长" : 0
                 }
 
                 if len(file_links) > 1 and file_links[1]["link"]:
