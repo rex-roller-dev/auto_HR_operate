@@ -156,9 +156,9 @@ def wps_callback():
                 "服务时长" : 0
                 }
 
-                if len(file_links) > 1 and file_links[1]["link"]:
+                if any("志愿深圳" in item.get("title", "") for item in file_links):
                     sz_data = parse_szvolunteer(file_links[1]["local_path"])
-                if len(file_links) > 2 and file_links[2]["link"]: 
+                if any("i志愿" in item.get("title", "") for item in file_links): 
                     ivolunteer_hours = parse_ivolunteer(
                         file_links[2]["local_path"],
                         final_year=end_date.year,
@@ -192,11 +192,11 @@ def wps_callback():
                 volunteer_hours_verify(
                     certificate_data = form_data,
                     sz_volunteer_data = sz_data,
-                    ivolunteer_hours = ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else 0,
+                    ivolunteer_hours = ivolunteer_hours,
                     szu_volunteer_hours = szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
-                    contain_ivolunteer = len(file_links) > 2 and file_links[2]["link"] is not None,
+                    contain_ivolunteer = any("i志愿" in item.get("title", "") for item in file_links),
                     contain_szu_volunteer = len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工",
-                    contain_sz_volunteer = True if file_links[1]["link"] else False
+                    contain_sz_volunteer = any("志愿深圳" in item.get("title", "") for item in file_links)
                 )
                 
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 时间校验通过", flush=True)
@@ -211,7 +211,7 @@ def wps_callback():
                                             src_docx=file_links[0]["local_path"],
                                             image_path=r"章.png",
                                             szu_hours=szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
-                                            i_volunteer_hours=ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else 0,
+                                            i_volunteer_hours=ivolunteer_hours if any("i志愿" in item.get("title", "") for item in file_links) else 0,
                                             )
                     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📝 回写内容准备完毕: {back_info}", flush=True)
                 except Exception as e:
