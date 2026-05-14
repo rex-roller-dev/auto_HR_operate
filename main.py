@@ -160,7 +160,11 @@ def wps_callback():
                     sz_data = parse_szvolunteer(file_links[1]["local_path"])
                 if any("i志愿" in item.get("title", "") for item in file_links): 
                     ivolunteer_hours = parse_ivolunteer(
-                        file_links[2]["local_path"],
+                        next(
+                        (item.get("local_path") for item in file_links 
+                        if "i志愿" in item.get("title", "")),
+                        None
+                    ),
                         final_year=end_date.year,
                         base_year=start_date.year,
                         base_month=start_date.month,
