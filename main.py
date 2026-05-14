@@ -195,7 +195,8 @@ def wps_callback():
                     ivolunteer_hours = ivolunteer_hours if len(file_links) > 2 and file_links[2]["link"] else 0,
                     szu_volunteer_hours = szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
                     contain_ivolunteer = len(file_links) > 2 and file_links[2]["link"] is not None,
-                    contain_szu_volunteer = len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工"
+                    contain_szu_volunteer = len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工",
+                    contain_sz_volunteer = len(file_links) > 1 and file_links[1]["link"] is not None
                 )
                 
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ✅ 时间校验通过", flush=True)
