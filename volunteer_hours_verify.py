@@ -78,3 +78,13 @@ def volunteer_hours_verify(
 
     # 能走到这里 = 全部 OK
     return
+
+if __name__ == "__main__":
+    volunteer_hours_verify(certificate_data={'name': '钟浚楠', 'student_id': '2022280359', 'start_date': '2025-09-01', 'end_date': '2026-05-12', 'szu_volunteer_hours': 0, 'volunteer_shenzhen_hours': 0, 'i_volunteer_hours': 518.92, 'external_system_1': None, 'external_system_1_hours': None, 'external_system_2': None, 'external_system_2_hours': None, 'total_hours': 518.92},
+                            sz_volunteer_data={'姓名': None, '义工号': None, '服务时长': 0},
+                            ivolunteer_hours=0,
+                            szu_volunteer_hours=0,
+                            contain_ivolunteer=True,
+                            contain_szu_volunteer=False,
+                            contain_sz_volunteer=False)
+    

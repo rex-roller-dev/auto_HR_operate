@@ -231,6 +231,8 @@ def sum_data(shortlist, base_year, base_month, base_date, final_year, final_mont
         if not is_valid_date_range(start_date, base_year, base_month, base_date, final_year, final_month, final_day):
             continue
         
+        # 调试输出符合条件的记录
+        # print(f"符合条件的记录: 日期={start_date}, 时长={duration}, 来源={source}", flush=True)  
         # 解析时长并累加
         total_minutes += parse_duration(duration)
     
@@ -266,9 +268,12 @@ def     parse_ivolunteer(path: str, final_year: int, base_year: int, base_month:
 
 if __name__ == "__main__":
     # 测试示例
-    path = r"C:\Users\20391\Desktop\test\testfile\三个——正确\i志愿-王佳豪.pdf"
+    path = r"C:\Users\20391\Desktop\服务时间证书(120).pdf"
     # 参数说明：path, 最终年份, 基准年份, 基准月, 基准日, 最终月, 最终日
-    total_hours = parse_ivolunteer(path, 2024, 2019, 9, 1, 10, 9)
+    total_hours = parse_ivolunteer(path, 2026, 2025, 9, 1, 5, 12)
 
     print(f"总志愿时长：{total_hours:.2f} 小时")
     # dataclean(['2023.08.21', '15小时44分', '至', 'i志愿', '2023.08.22'])
+
+    # mins = sum_data([('2025.11.30', '8小时', 'i志愿'), ('2025.11.29', '8小时', 'i志愿')], 2025, 9, 1,2026, 5, 12)
+    # print(f"总志愿时长：{mins/60:.2f} 小时")
