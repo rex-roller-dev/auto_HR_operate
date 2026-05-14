@@ -15,7 +15,7 @@ def volunteer_hours_verify(
     szu_volunteer_hours: float,
     contain_ivolunteer: bool,
     contain_szu_volunteer: bool,
-    contains_sz_volunteer: bool
+    contain_sz_volunteer: bool
 ) -> None:
     """
     校验通过：什么都不返回
@@ -38,7 +38,7 @@ def volunteer_hours_verify(
 
     # 1️⃣ 姓名
     if sz_volunteer_data is not None:
-        if contains_sz_volunteer:
+        if contain_sz_volunteer:
             if sz_volunteer_data['姓名'] is None and sz_volunteer_data['义工号'] is None:
                 raise  FileError(
                     f"志愿深圳数据错误，请从服务明细-导出明细中获取文件，详情请查看公众号"
