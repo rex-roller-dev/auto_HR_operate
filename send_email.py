@@ -1,11 +1,8 @@
 import smtplib
+import logging
+import os
 from pathlib import Path
 from email.message import EmailMessage
-from email.header import Header
-from email.utils import formataddr
-from email import encoders
-from email.mime.base import MIMEBase
-from email.header import Header
 from email.utils import formataddr
 from exceptions import (
     VolunteerVerifyError,
@@ -25,6 +22,42 @@ from email_config import (
     SENDER_NAME
 )
 
+logger = logging.getLogger(__name__)
+
+
+def _build_email_message(
+    sender_email: str,
+    to_email: str,
+    to_name: str,
+    subject: str,
+    body: str,
+    attachments: list[str] | None,
+) -> EmailMessage:
+    """根据实际使用的发件账号创建邮件，确保 From 与 SMTP 登录账号一致。"""
+    msg = EmailMessage()
+
+    msg["From"] = formataddr((SENDER_NAME, sender_email))
+    msg["To"] = formataddr((to_name, to_email))
+    msg["Subject"] = subject
+    msg.set_content(body, charset="utf-8")
+
+    if attachments:
+        for file_path in attachments:
+            path = Path(file_path)
+            if not path.exists():
+                raise FileNotFoundError(f"附件不存在: {path}")
+
+            with open(path, "rb") as file:
+                msg.add_attachment(
+                    file.read(),
+                    maintype="application",
+                    subtype="pdf",
+                    filename=path.name,
+                )
+
+    return msg
+
+
 def send_email(
     to_email: str,
     to_name: str,
@@ -32,38 +65,54 @@ def send_email(
     body: str,
     attachments: list[str] | None = None
 ) -> None:
+    """优先用主邮箱发送；SMTP 发件失败时自动改用副邮箱重试一次。"""
+    sender_accounts = (
+        ("主邮箱", SENDER_EMAIL, SENDER_PASSWORD),
+        (
+            "副邮箱",
+            os.getenv("AUTO_HR_BACKUP_SENDER_EMAIL"),
+            os.getenv("AUTO_HR_BACKUP_SENDER_PASSWORD"),
+        ),
+    )
 
-    msg = EmailMessage()
-
-    # 发件人 / 收件人 / 主题（直接传字符串）
-    msg["From"] = formataddr((SENDER_NAME, SENDER_EMAIL))
-    msg["To"] = formataddr((to_name, to_email))
-    msg["Subject"] = subject   # ✅ 不再用 Header()
-
-    # 正文
-    msg.set_content(body, charset="utf-8")
-    
-    # 附件
-    if attachments:
-        for file_path in attachments:
-            path = Path(file_path)
-            if not path.exists():
-                raise FileNotFoundError(f"附件不存在: {path}")
-
-            with open(path, "rb") as f:
-                file_data = f.read()
-
-            msg.add_attachment(
-                file_data,
-                maintype="application",
-                subtype="pdf",
-                filename=path.name
+    for index, (_, sender_email, sender_password) in enumerate(sender_accounts):
+        try:
+            if index == 1:
+                if not sender_email:
+                    raise RuntimeError(
+                        "副邮箱地址未配置，请设置环境变量 "
+                        "AUTO_HR_BACKUP_SENDER_EMAIL。"
+                    )
+                if not sender_password:
+                    raise RuntimeError(
+                        "副邮箱授权码未配置，请设置环境变量 "
+                        "AUTO_HR_BACKUP_SENDER_PASSWORD。"
+                    )
+            elif not sender_password:
+                raise RuntimeError("主邮箱授权码未配置。")
+            msg = _build_email_message(
+                sender_email=sender_email,
+                to_email=to_email,
+                to_name=to_name,
+                subject=subject,
+                body=body,
+                attachments=attachments,
             )
-
-    # 发送
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.send_message(msg)
+            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                server.login(sender_email, sender_password)
+                server.send_message(msg)
+            return
+        except smtplib.SMTPRecipientsRefused:
+            # 收件人地址被服务器拒绝时，换发件账号无法解决，直接返回该错误。
+            raise
+        except (smtplib.SMTPException, OSError) as error:
+            if index == 0:
+                logger.warning(
+                    "主邮箱发送失败（%s），正在使用副邮箱重试。",
+                    error,
+                )
+                continue
+            raise
 
 def find_stamped_pdf(download_dir: str = "downloads") -> Path:
     download_dir = Path(download_dir)
