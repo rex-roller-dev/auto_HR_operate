@@ -1,5 +1,6 @@
 import os
 import platform
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -28,9 +29,13 @@ def convert(docx_path: str, pdf_path: str):
     # ===== Linux / fallback =====
     out_dir = pdf_path.parent
 
+    office_binary = shutil.which("libreoffice") or shutil.which("soffice")
+    if office_binary is None:
+        raise RuntimeError("未找到 LibreOffice/soffice 可执行文件")
+
     subprocess.run(
         [
-            "libreoffice",
+            office_binary,
             "--headless",
             "--convert-to", "pdf",
             str(docx_path),

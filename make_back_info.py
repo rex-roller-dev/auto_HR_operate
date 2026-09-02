@@ -10,6 +10,50 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 DOWNLOADS_DIR = BASE_DIR / "downloads"
+LIBREOFFICE_CJK_FONT = "WenQuanYi Micro Hei"
+
+
+def _iter_document_paragraphs(doc):
+    """遍历正文、表格以及页眉页脚中的段落。"""
+    yield from doc.paragraphs
+
+    def iter_table_paragraphs(table):
+        for row in table.rows:
+            for cell in row.cells:
+                yield from cell.paragraphs
+                for nested_table in cell.tables:
+                    yield from iter_table_paragraphs(nested_table)
+
+    for table in doc.tables:
+        yield from iter_table_paragraphs(table)
+
+    for section in doc.sections:
+        for part in (section.header, section.first_page_header,
+                     section.even_page_header, section.footer,
+                     section.first_page_footer, section.even_page_footer):
+            yield from part.paragraphs
+            for table in part.tables:
+                yield from iter_table_paragraphs(table)
+
+
+def normalize_fonts_for_libreoffice(doc, font_name=LIBREOFFICE_CJK_FONT):
+    """
+    使用容器中确定存在的 CJK 字体，避免 LibreOffice 读取 DOCX 内嵌的
+    仿宋_GB2312（ODTTF）后导出缺字或空白 PDF。
+
+    保留字号、粗体、下划线和颜色。模板原来的 28 磅固定行距在替代
+    字体下会把签名挤到第二页，因此同步收紧为 26 磅。
+    """
+    for para in _iter_document_paragraphs(doc):
+        for run in para.runs:
+            run.font.name = font_name
+            r_fonts = run._element.get_or_add_rPr().get_or_add_rFonts()
+            for script in ("ascii", "hAnsi", "eastAsia", "cs"):
+                r_fonts.set(qn(f"w:{script}"), font_name)
+
+        line_spacing = para.paragraph_format.line_spacing
+        if hasattr(line_spacing, "pt") and abs(line_spacing.pt - 28) < 0.1:
+            para.paragraph_format.line_spacing = Pt(26)
 
 
 
@@ -157,6 +201,10 @@ def make_back_info(exception: Exception, src_docx: str, szu_hours: float = None,
                 break
 
         
+        # 该类表格可能内嵌仿宋_GB2312。Linux LibreOffice 读取某些 ODTTF
+        # 后会生成字体资源缺失的 PDF，因此在导出前统一为镜像内已安装字体。
+        normalize_fonts_for_libreoffice(doc)
+
         updated_docx = DOWNLOADS_DIR / "深圳大学志愿时认证表_已更新.docx"
         doc.save(updated_docx)
 
