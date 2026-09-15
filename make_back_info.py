@@ -83,6 +83,14 @@ def stamp_pdf(
         overlay=True  # ✅ 关键：盖在文字上方
     )
 
+    # LibreOffice 的默认打开页面设置会触发部分平台的上传限制。
+    catalog_xref = doc.pdf_catalog()
+    doc.xref_set_key(catalog_xref, "OpenAction", "null")
+    # 部分 PyMuPDF 版本仍保留 null 字段，需从格式化后的根字典中删除。
+    catalog = doc.xref_object(catalog_xref, compressed=False)
+    catalog = re.sub(r"(?m)^  /OpenAction null\n", "", catalog)
+    doc.update_object(catalog_xref, catalog)
+
     doc.save(output_pdf_path)
     doc.close()
     return output_pdf_path
