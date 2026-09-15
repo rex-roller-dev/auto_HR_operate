@@ -157,7 +157,9 @@ def wps_callback():
                 }
 
                 if any("志愿深圳" in item.get("title", "") for item in file_links):
-                    sz_data = parse_szvolunteer(file_links[1]["local_path"])
+                    sz_data = parse_szvolunteer(
+                        file_links[1]["local_path"], start_date, end_date
+                    )
                 if any("i志愿" in item.get("title", "") for item in file_links): 
                     ivolunteer_hours = parse_ivolunteer(
                         next(
