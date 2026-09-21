@@ -1,27 +1,52 @@
-from typing import Optional
 import requests
-import json
+import time
+import tempfile
+from urllib.parse import urlsplit
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 DOWNLOADS_DIR = BASE_DIR / "downloads"
-TOKEN_FILE = BASE_DIR / "token.json"
+MAX_DOWNLOAD_ATTEMPTS = 3
+RETRYABLE_STATUS = {408, 429, 500, 502, 503, 504}
 
 
-# def load_access_token(token_file: Path) -> str:
-#     """
-#     从 token.json 中读取 access_token
-#     """
-#     if not token_file.exists():
-#         raise FileNotFoundError(f"{token_file} 不存在，请先获取 token")
+class WPSDownloadError(RuntimeError):
+    """只保留定位信息，避免把签名 URL、Token 写入表格或邮件。"""
 
-#     with token_file.open("r", encoding="utf-8") as f:
-#         token_data = json.load(f)
+    def __init__(self, stage, *, status=None, retryable=False, detail=""):
+        self.stage = stage
+        self.status = status
+        self.retryable = retryable
+        message = f"WPS {stage}失败"
+        if status is not None:
+            message += f"（HTTP {status}）"
+        if detail:
+            message += f"：{detail}"
+        super().__init__(message)
 
-#     access_token = token_data.get("access_token")
-#     if not access_token:
-#         raise ValueError("token.json 中未找到 access_token")
 
-#     return access_token
+def _get_api_data(url, access_token, params, stage):
+    try:
+        with requests.get(
+            url, headers={"Authorization": f"Bearer {access_token}"},
+            params=params, timeout=(10, 20),
+        ) as response:
+            response.raise_for_status()
+            data = response.json()
+    except requests.HTTPError as exc:
+        status = exc.response.status_code if exc.response is not None else None
+        raise WPSDownloadError(
+            stage, status=status, retryable=status in RETRYABLE_STATUS,
+        ) from None
+    except (requests.Timeout, requests.ConnectionError):
+        raise WPSDownloadError(stage, retryable=True, detail="连接中断或超时") from None
+    except (requests.RequestException, ValueError):
+        raise WPSDownloadError(stage, detail="接口响应异常") from None
+    if not isinstance(data, dict) or data.get("code") != 0:
+        raise WPSDownloadError(stage, detail="接口未返回成功结果，请检查 WPS 接口日志")
+    if not isinstance(data.get("data"), dict):
+        raise WPSDownloadError(stage, detail="接口数据缺失")
+    return data["data"]
+
 
 def get_file_meta(file_id: str, access_token: str) -> dict:
     """
@@ -29,25 +54,7 @@ def get_file_meta(file_id: str, access_token: str) -> dict:
     """
     url = f"https://openapi.wps.cn/v7/files/{file_id}/meta"
 
-    print(f"Getting file meta for file_id: {file_id} with access_token: {access_token}", flush=True)
-    headers = {
-        # ⚠️ 注意：这是 KSO-1 签名后的 token
-        "Authorization": f"Bearer {access_token}",
-    }
-
-    params = {
-        "with_drive": "true"
-    }
-
-    resp = requests.get(url, headers=headers, params=params, timeout=10)
-    resp.raise_for_status()
-
-    data = resp.json()
-
-    if data.get("code") != 0:
-        raise RuntimeError(f"WPS API error: {data.get('msg')}")
-
-    return data["data"]
+    return _get_api_data(url, access_token, {"with_drive": "true"}, "文件元信息查询")
 
 def get_drive_id_by_file_id(file_id: str, access_token: str) -> str:
     meta = get_file_meta(file_id, access_token)
@@ -69,22 +76,8 @@ def get_download_info(
     """
     url = f"https://openapi.wps.cn/v7/drives/{drive_id}/files/{file_id}/download"
 
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-    }
-
-    params = {}
-    if with_hash:
-        params["with_hash"] = "true"
-
-    resp = requests.get(url, headers=headers, params=params, timeout=10)
-    resp.raise_for_status()
-
-    data = resp.json()
-    if data.get("code") != 0:
-        raise RuntimeError(f"Get download info failed: {data.get('msg')}")
-
-    return data["data"]
+    params = {"with_hash": "true"} if with_hash else {}
+    return _get_api_data(url, access_token, params, "下载地址申请")
 
 
 def download_file_stream(
@@ -95,14 +88,34 @@ def download_file_stream(
     """
     流式下载文件
     """
+    # 使用申请接口返回的完整 URL，不混入另一个账号的网页登录 Cookie。
+    # 不向下载域名转发 OAuth Token；临时 URL 的查询参数保持原样。
+    save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with requests.get(download_url, stream=True, timeout=60) as r:
-        r.raise_for_status()
-        with open(save_path, "wb") as f:
-            for chunk in r.iter_content(chunk_size):
-                if chunk:
-                    f.write(chunk)
+    partial_path = None
+    try:
+        with requests.get(download_url, stream=True, timeout=(10, 30)) as response:
+            response.raise_for_status()
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=save_path.parent, prefix=".wps-", suffix=".part", delete=False,
+            ) as output:
+                partial_path = Path(output.name)
+                size = 0
+                for chunk in response.iter_content(chunk_size):
+                    if chunk:
+                        output.write(chunk)
+                        size += len(chunk)
+            if size == 0:
+                raise WPSDownloadError("文件内容下载", retryable=True, detail="返回空文件")
+            # requests 会自动解压，此时不能与压缩后的 Content-Length 比较。
+            length = response.headers.get("Content-Length")
+            if length and length.isdigit() and not response.headers.get("Content-Encoding"):
+                if size != int(length):
+                    raise WPSDownloadError("文件内容下载", retryable=True, detail="文件传输不完整")
+        partial_path.replace(save_path)
+    finally:
+        if partial_path is not None:
+            partial_path.unlink(missing_ok=True)
 
 
 def is_file_download_success(
@@ -127,67 +140,52 @@ def download_wps_file(
     access_token: str,
     save_dir: Path,
     filename: str,
-    cookies: dict | None = None,   # 👈 关键
 ) -> Path:
+    # 文件名来自表单，只允许写入指定下载目录。
+    if not filename or filename in {".", ".."} or "/" in filename or "\\" in filename or ":" in filename:
+        raise ValueError("附件文件名无效")
+    save_path = Path(save_dir) / filename
+    for attempt in range(1, MAX_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            # 每次重试重新申请地址，不能重复使用可能已经失效的签名 URL。
+            info = get_download_info(drive_id, file_id, access_token)
+            download_url = info.get("url")
+            if not isinstance(download_url, str) or not download_url:
+                raise WPSDownloadError("下载地址申请", detail="下载地址缺失")
+            parsed = urlsplit(download_url)
+            if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
+                raise WPSDownloadError("下载地址申请", detail="下载地址格式无效")
+            print(f"WPS 文件内容下载，第 {attempt}/{MAX_DOWNLOAD_ATTEMPTS} 次", flush=True)
+            download_file_stream(download_url, save_path)
+            return save_path
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            error = WPSDownloadError(
+                "文件内容下载", status=status,
+                retryable=status in RETRYABLE_STATUS or status in {401, 403},
+            )
+        except (requests.Timeout, requests.ConnectionError, requests.exceptions.ChunkedEncodingError):
+            error = WPSDownloadError("文件内容下载", retryable=True, detail="连接中断或超时")
+        except requests.RequestException:
+            error = WPSDownloadError("文件内容下载", detail="请求异常")
+        except WPSDownloadError as exc:
+            error = exc
+        if not error.retryable or attempt == MAX_DOWNLOAD_ATTEMPTS:
+            raise error from None
+        print(f"{error}；重新申请下载地址后重试", flush=True)
+        time.sleep(attempt)
 
-    info = get_download_info(drive_id, file_id, access_token)
-    download_url = info.get("url")
-    # print("Download URL:", download_url)
-    if not download_url:
-        raise RuntimeError("Download url missing")
-
-    save_path = save_dir / filename
-    save_path.parent.mkdir(parents=True, exist_ok=True)
-
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "*/*",
-    }
-
-    with requests.get(
-        download_url,
-        headers=headers,
-        cookies=cookies,   # 👈 关键
-        stream=True,
-        timeout=60,
-    ) as r:
-        r.raise_for_status()
-        with open(save_path, "wb") as f:
-            for chunk in r.iter_content(8192):
-                if chunk:
-                    f.write(chunk)
-
-    if not save_path.exists() or save_path.stat().st_size == 0:
-        raise RuntimeError("Download failed or empty file")
-
-    return save_path
 
 def download_file_from_wps_with_drive(
     file_id: str,
     filename: str,
-    access_token: str
-) -> Path :
-
-    ACCESS_TOKEN = access_token
-
-    drive_id = get_drive_id_by_file_id(file_id, ACCESS_TOKEN)
-    # print(f"Drive ID: {drive_id}")
-    cookies = {
-        "wps_sid": "V02Snq6gU0PmmPjNhEHnYw15Xoxt7mw00a41e763006af59eae",
-        "kso_sid": "TKS-Txfe9jsW8I2kV1Z88rIIK-IRTro0KK-AKhXPKOiwApUIggeWcwYQtJeJzQI70ebuYCppbfoyIeopTp-3gq02QE_YERCSQ3b9fXu398eld0IJRf0pNf6uNzYzO7UIKMIpKyIzO3zA8TcdX_44ASKBNkzkSXf5nxDfcVoNtcIVpmDRQNgyV3QJ-KN-K6oTTKS.B55CrQ2a-ixOknVezaqdxfJhiHe4UpVqpWHd8KCwf_kMW_RdWScXAOBUL6MrR7FedNRxdqJWha6Bu8IdSZILsr"
-    }
-    print(f"drive_id: {drive_id}, file_id: {file_id}, access_token: {ACCESS_TOKEN}", flush=True)
-    path = download_wps_file(
+    access_token: str,
+) -> Path:
+    drive_id = get_drive_id_by_file_id(file_id, access_token)
+    return download_wps_file(
         drive_id=drive_id,
         file_id=file_id,
-        access_token=ACCESS_TOKEN,
+        access_token=access_token,
         save_dir=DOWNLOADS_DIR,
         filename=filename,
-        cookies=cookies,   # 👈 关  键
     )
-    return path
-    
-
-
-if __name__ == "__main__":
-    pass

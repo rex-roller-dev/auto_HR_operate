@@ -98,6 +98,10 @@ def wps_callback():
             print(f"⚠️ 答卷 {aid} 未处理", flush=True)
 
         if not processed:
+            file_links = []
+            access_token = None
+            ivolunteer_hours = 0
+            szu_hours = 0
             try:
                 print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 🛠 开始处理任务",flush=True)
                 print("\n" + "="*50 + "\n", flush=True)
@@ -213,18 +217,24 @@ def wps_callback():
             finally:
                 try:
                     # 3. 准备回写内容
-                    back_info = make_back_info(exception=err,
-                                            src_docx=file_links[0]["local_path"],
-                                            image_path=r"章.png",
-                                            szu_hours=szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
-                                            i_volunteer_hours=ivolunteer_hours if any("i志愿" in item.get("title", "") for item in file_links) else 0,
-                                            )
+                    # 下载/解析失败时没有可盖章的文件，保留原始错误用于回写。
+                    back_info = err
+                    if err is None:
+                        back_info = make_back_info(
+                            exception=None,
+                            src_docx=file_links[0]["local_path"],
+                            image_path=r"章.png",
+                            szu_hours=szu_hours if len(data["answerContents"][-3]["value"]) >= 1 and data["answerContents"][-3]["value"][0] == "需要深大义工" else 0,
+                            i_volunteer_hours=ivolunteer_hours if any("i志愿" in item.get("title", "") for item in file_links) else 0,
+                        )
                     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} 📝 回写内容准备完毕: {back_info}", flush=True)
                 except Exception as e:
                     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} ❌ 回写内容准备失败:", e, flush=True)
 
                 try:
                     # 4. 回写
+                    if access_token is None:
+                        raise RuntimeError("未获取到访问凭据，无法回写任务结果")
                     write_situation = write_verify_result(
                         form_data=data,
                         exception=err if err else None,
