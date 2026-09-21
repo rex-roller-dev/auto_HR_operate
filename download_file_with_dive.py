@@ -1,3 +1,4 @@
+import os
 import requests
 import time
 import tempfile
@@ -24,11 +25,27 @@ class WPSDownloadError(RuntimeError):
         super().__init__(message)
 
 
+def _download_cookies():
+    """凭据只从运行环境读取，仅允许 HTTPS 的 WPS/金山文档域名使用。"""
+    jar = requests.cookies.RequestsCookieJar()
+    for name, variable in (
+        ("wps_sid", "WPS_SID"), ("kso_sid", "KSO_SID"), ("wpsua", "WPS_UA"),
+    ):
+        value = os.environ.get(variable, "").strip()
+        if not value:
+            continue
+        if any(ord(char) < 32 or ord(char) > 126 or char == ";" for char in value):
+            raise WPSDownloadError("下载凭据配置", detail=f"{variable} 格式无效，请只填写 Cookie 值")
+        for domain in (".wps.cn", ".kdocs.cn"):
+            jar.set(name, value, domain=domain, path="/", secure=True)
+    return {"cookies": jar} if jar else {}
+
+
 def _get_api_data(url, access_token, params, stage):
     try:
         with requests.get(
             url, headers={"Authorization": f"Bearer {access_token}"},
-            params=params, timeout=(10, 20),
+            params=params, timeout=(10, 20), **_download_cookies(),
         ) as response:
             response.raise_for_status()
             data = response.json()
@@ -88,13 +105,13 @@ def download_file_stream(
     """
     流式下载文件
     """
-    # 使用申请接口返回的完整 URL，不混入另一个账号的网页登录 Cookie。
-    # 不向下载域名转发 OAuth Token；临时 URL 的查询参数保持原样。
+    # 申请地址与下载使用同一组环境变量凭据，不转发 OAuth Token。
+    # CookieJar 按域名和 HTTPS 限制发送，重定向到其他域名不会携带这些凭据。
     save_path = Path(save_path)
     save_path.parent.mkdir(parents=True, exist_ok=True)
     partial_path = None
     try:
-        with requests.get(download_url, stream=True, timeout=(10, 30)) as response:
+        with requests.get(download_url, stream=True, timeout=(10, 30), **_download_cookies()) as response:
             response.raise_for_status()
             with tempfile.NamedTemporaryFile(
                 mode="wb", dir=save_path.parent, prefix=".wps-", suffix=".part", delete=False,

@@ -26,6 +26,7 @@ def response(status=200, *, data=None, chunks=(b"document",), headers=None):
 
 class DownloadTests(unittest.TestCase):
     def setUp(self):
+        patch.dict(downloader.os.environ, {"WPS_SID": "", "KSO_SID": "", "WPS_UA": ""}).start()
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.folder = Path(self.directory.name)
@@ -57,6 +58,51 @@ class DownloadTests(unittest.TestCase):
         self.assertEqual(get.call_count, 4)
         self.assertEqual(get.call_args_list[3].args[0], "https://gateway.wps.cn/fresh")
         self.sleep.assert_called_once_with(1)
+
+    def test_environment_credentials_used_in_both_stages(self):
+        with patch.dict(downloader.os.environ, {
+            "WPS_SID": "WPS-SECRET", "KSO_SID": "KSO-SECRET", "WPS_UA": "DEVICE-SECRET",
+        }), patch.object(downloader.requests, "get", side_effect=[self.info(), response()]) as get:
+            self.download()
+        for call in get.call_args_list:
+            prepared = requests.Request("GET", call.args[0], cookies=call.kwargs["cookies"]).prepare()
+            self.assertIn("wps_sid=WPS-SECRET", prepared.headers["Cookie"])
+            self.assertIn("kso_sid=KSO-SECRET", prepared.headers["Cookie"])
+            self.assertIn("wpsua=DEVICE-SECRET", prepared.headers["Cookie"])
+        self.assertNotIn("headers", get.call_args_list[1].kwargs)
+
+    def test_cookies_restricted_to_https_wps_domains(self):
+        with patch.dict(downloader.os.environ, {"WPS_SID": "WPS-SECRET"}):
+            jar = downloader._download_cookies()["cookies"]
+        for url, allowed in (
+            ("https://ksc-bj.ag.wps.cn/file", True),
+            ("https://365.kdocs.cn/file", True),
+            ("https://storage.example.org/file", False),
+            ("https://wps.cn.example.org/file", False),
+            ("https://evilwps.cn/file", False),
+            ("http://ksc-bj.ag.wps.cn/file", False),
+        ):
+            with self.subTest(url=url):
+                prepared = requests.Request("GET", url, cookies=jar).prepare()
+                self.assertEqual("Cookie" in prepared.headers, allowed)
+
+    def test_invalid_cookie_is_rejected_without_exposing_value(self):
+        with patch.dict(downloader.os.environ, {"WPS_SID": "SECRET\r\nInjected: value"}), \
+                patch.object(downloader.requests, "get") as get:
+            with self.assertRaises(downloader.WPSDownloadError) as raised:
+                self.download()
+        get.assert_not_called()
+        self.assertNotIn("SECRET", str(raised.exception))
+        self.assertIn("WPS_SID", str(raised.exception))
+
+    def test_configured_cookie_not_exposed_on_download_failure(self):
+        output = io.StringIO()
+        with patch.dict(downloader.os.environ, {"KSO_SID": "COOKIE-SECRET"}), \
+                patch.object(downloader.requests, "get", side_effect=[self.info(), response(404)]), \
+                redirect_stdout(output):
+            with self.assertRaises(downloader.WPSDownloadError) as raised:
+                self.download()
+        self.assertNotIn("COOKIE-SECRET", output.getvalue() + str(raised.exception))
 
     def test_persistent_403_is_bounded_and_redacted(self):
         output = io.StringIO()
