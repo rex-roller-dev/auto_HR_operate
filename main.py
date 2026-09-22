@@ -22,6 +22,7 @@ from refresh_token import *
 import time
 import sys
 from download_file_with_dive import download_file_from_wps_with_drive
+from wps_session import check_wps_session
 import os
 from ask_for_token import ask_for_token
 from extract_body import extract_body
@@ -109,6 +110,8 @@ def wps_callback():
                 print("\n" + "="*50 + "\n", flush=True)
                 # 0.刷新token
                 access_token, refresh_token = get_access_token()
+                # 每个实际处理的任务仅检查一次；先取得 Token 以保留失败回写能力。
+                check_wps_session()
                 # print(f"access_token:{access_token}, refresh_token:{refresh_token}", flush=True)
 
                 # 1. 下载文件

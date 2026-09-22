@@ -19,7 +19,7 @@ from download_file_with_dive import WPSDownloadError
 
 
 class CallbackFailureTests(unittest.TestCase):
-    def run_callback(self, *, token_error=False, second_file=False, success=False):
+    def run_callback(self, *, token_error=False, second_file=False, success=False, session_error=False):
         source = Path(__file__).resolve().parents[1] / "main.py"
         tree = ast.parse(source.read_text(encoding="utf-8"))
         callback = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "wps_callback")
@@ -41,9 +41,13 @@ class CallbackFailureTests(unittest.TestCase):
         }
         for name in ("get_access_token", "download_file_from_wps_with_drive", "make_back_info",
                      "write_verify_result", "send_failure_email", "send_success_email", "shutil",
-                     "parse_volunteer", "volunteer_hours_verify"):
+                     "parse_volunteer", "volunteer_hours_verify", "check_wps_session"):
             environment[name] = MagicMock()
         environment["get_access_token"].return_value = ("token", "refresh")
+        if session_error:
+            from wps_session import WPSSessionError
+            original_error = WPSSessionError("WPS 登录会话已失效")
+            environment["check_wps_session"].side_effect = original_error
         if success:
             environment["download_file_from_wps_with_drive"].return_value = Path("form.docx")
             environment["parse_volunteer"].return_value = {
@@ -68,6 +72,12 @@ class CallbackFailureTests(unittest.TestCase):
                 _, status = environment["wps_callback"]()
         self.assertEqual(status, 200)
         self.assertEqual(queue.unfinished_tasks, 0)
+        if token_error:
+            environment["check_wps_session"].assert_not_called()
+        else:
+            environment["check_wps_session"].assert_called_once_with()
+        if session_error:
+            environment["download_file_from_wps_with_drive"].assert_not_called()
         if success:
             environment["make_back_info"].assert_called_once()
             self.assertEqual(environment["make_back_info"].call_args.kwargs["src_docx"], Path("form.docx"))
@@ -88,6 +98,9 @@ class CallbackFailureTests(unittest.TestCase):
 
     def test_first_attachment_failure_preserves_original_error(self):
         self.run_callback()
+
+    def test_session_failure_preserves_writeback_and_notification(self):
+        self.run_callback(session_error=True)
 
     def test_second_attachment_failure_does_not_stamp_incomplete_application(self):
         self.run_callback(second_file=True)
