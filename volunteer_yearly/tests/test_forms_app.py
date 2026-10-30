@@ -79,7 +79,34 @@ class AppTests(unittest.TestCase):
 
     def test_binding_does_not_process(self):
         response = self.client.post("/event-invoke", json={})
-        self.assertEqual(response.get_json()["bind_code"], "binding-test")
+        self.assertEqual(response.get_json(), {"bind_code": "binding-test"})
+        self.processor.run.assert_not_called()
+
+    def test_empty_binding_post_does_not_parse_submission(self):
+        for path in ("/", "/event-invoke"):
+            for content_type in (None, "application/json", "text/plain"):
+                with self.subTest(path=path, content_type=content_type):
+                    response = self.client.post(path, content_type=content_type)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.get_json(), {"bind_code": "binding-test"})
+        self.processor.run.assert_not_called()
+
+    def test_empty_binding_post_still_checks_secret_and_configuration(self):
+        app = create_app(replace(Settings(), bind_code="binding-test", callback_secret="expected"),
+                         lambda headers: self.processor)
+        client = app.test_client()
+        self.assertEqual(client.post("/event-invoke").status_code, 403)
+        response = client.post("/event-invoke?secret=expected")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"bind_code": "binding-test"})
+        unconfigured = create_app(Settings(), lambda headers: self.processor)
+        self.assertEqual(unconfigured.test_client().post("/event-invoke").status_code, 503)
+        self.processor.run.assert_not_called()
+
+    def test_invalid_submission_is_not_acknowledged_as_binding(self):
+        data = form()
+        data["answerContents"] = []
+        self.assertEqual(self.client.post("/event-invoke", json=data).status_code, 400)
         self.processor.run.assert_not_called()
 
     def test_health_requires_no_credentials(self):

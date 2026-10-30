@@ -25,7 +25,7 @@ def create_app(settings=None, processor_factory=None):
     def bind_response():
         if not cfg.bind_code:
             return jsonify(code=503, msg="请先配置WPS_BIND_CODE"), 503
-        return jsonify(bind_code=cfg.bind_code, code=0, msg="Success", data={"bind_code": cfg.bind_code})
+        return jsonify(bind_code=cfg.bind_code)
 
     @app.get("/healthz")
     def health():
@@ -39,7 +39,8 @@ def create_app(settings=None, processor_factory=None):
                 supplied = request.headers.get("X-Callback-Secret") or request.args.get("secret", "")
                 if not hmac.compare_digest(supplied, cfg.callback_secret):
                     return jsonify(code=403, msg="回调校验失败"), 403
-            if request.method == "GET":
+            # 绑定探测可以没有 JSON 请求体，应在解析答卷之前返回绑定码。
+            if request.method == "GET" or not request.get_data().strip():
                 return bind_response()
             data = unwrap(request.get_json(force=True))
             if "answerContents" not in data:
