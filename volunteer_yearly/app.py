@@ -43,7 +43,7 @@ def create_app(settings=None, processor_factory=None):
             if request.method == "GET" or not request.get_data().strip():
                 return bind_response()
             data = unwrap(request.get_json(force=True))
-            if "answerContents" not in data:
+            if data.get("event") == "bind" or "answerContents" not in data:
                 return bind_response()
             submission = parse_submission(data, cfg, datetime.now(SHANGHAI).date())
             result = factory(request.headers).run(submission)

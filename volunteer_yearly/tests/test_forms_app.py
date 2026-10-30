@@ -91,6 +91,16 @@ class AppTests(unittest.TestCase):
                     self.assertEqual(response.get_json(), {"bind_code": "binding-test"})
         self.processor.run.assert_not_called()
 
+    def test_explicit_bind_event_ignores_answer_fields(self):
+        for answers in ([], None, "binding-placeholder", [{"qid": "name", "value": ""}]):
+            data = {"event": "bind", "aid": "", "answerContents": answers}
+            for body in (data, {"body": json.dumps(data)}):
+                with self.subTest(answers=answers, wrapped="body" in body):
+                    response = self.client.post("/event-invoke", json=body)
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.get_json(), {"bind_code": "binding-test"})
+        self.processor.run.assert_not_called()
+
     def test_empty_binding_post_still_checks_secret_and_configuration(self):
         app = create_app(replace(Settings(), bind_code="binding-test", callback_secret="expected"),
                          lambda headers: self.processor)
