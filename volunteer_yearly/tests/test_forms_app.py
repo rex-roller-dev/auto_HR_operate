@@ -63,6 +63,20 @@ class FormTests(unittest.TestCase):
         with self.assertRaises(UserError):
             parse_submission(data, Settings())
 
+    def test_upload_prefers_share_sid_over_numeric_file_id(self):
+        data = form()
+        entry = data["answerContents"][1]["value"][0]
+        entry.update(fileId="580000000001", fileSid="share-id", fileShareLink="https://www.kdocs.cn/l/share-id")
+        result = parse_submission(data, Settings())
+        self.assertEqual(result.uploads[0].file_id, "share-id")
+
+    def test_upload_uses_share_link_when_sid_is_missing(self):
+        data = form()
+        entry = data["answerContents"][1]["value"][0]
+        entry.update(fileId="580000000001", fileShareLink="https://www.kdocs.cn/l/share-id?from=form")
+        result = parse_submission(data, Settings())
+        self.assertEqual(result.uploads[0].file_id, "share-id")
+
     def test_missing_aid_fails(self):
         data = form()
         data.pop("aid")

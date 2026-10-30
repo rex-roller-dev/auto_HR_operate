@@ -99,14 +99,17 @@ def parse_submission(data, settings, today=None):
                 raise UserError(f"{platform}只接受PDF文件")
             if any(c in filename for c in "/\\\r\n") or filename.startswith("."):
                 raise UserError("附件文件名无效")
-            file_id = str(entry.get("fileId") or "").strip()
-            if not file_id:
+            # 表单的数字 fileId 与 v7 下载接口使用的分享编号不同；沿用原项目的分享编号。
+            file_id = str(entry.get("fileSid") or "").strip()
+            if not file_id and entry.get("fileShareLink"):
                 url = urlsplit(str(entry.get("fileShareLink", "")))
                 if url.scheme != "https" or not url.hostname or not (
                     url.hostname == "kdocs.cn" or url.hostname.endswith(".kdocs.cn")
                 ):
                     raise UserError("附件缺少有效的WPS文件编号")
                 file_id = url.path.rstrip("/").split("/")[-1]
+            if not file_id:
+                file_id = str(entry.get("fileId") or "").strip()
             if not re.fullmatch(r"[A-Za-z0-9_.-]{1,200}", file_id):
                 raise UserError("WPS附件编号格式错误")
             upload = Upload(platform, filename, file_id)
