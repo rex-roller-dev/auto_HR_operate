@@ -15,13 +15,13 @@ from reportlab.lib import colors
 
 from yearly.models import SZ, IV, aggregate
 from yearly.parsers import parse_pdf
-from yearly.reporting import write_xlsx
+from yearly.reporting import write_xlsx, email_bodies
 from tests.test_rules import student, activity
 
 pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
 
 
-def make_pdf(path, platform=SZ, watermark=False, no_grid=False):
+def make_pdf(path, platform=SZ, watermark=False, no_grid=False, source="i志愿"):
     width, height = landscape(A4)
     c = canvas.Canvas(str(path), pagesize=(width, height))
     c.setFont("STSong-Light", 11)
@@ -31,7 +31,7 @@ def make_pdf(path, platform=SZ, watermark=False, no_grid=False):
         for x, y, text in [
             (40, center, "测试跨学年活动"), (220, center + 17, "2025.08.31"),
             (250, center, "至"), (220, center - 17, "2025.09.01"),
-            (665, center, "8时11分"), (750, center, "i志愿"),
+            (665, center, "8时11分"), (750, center, source),
         ]:
             c.drawString(x, y, text)
     else:
@@ -105,6 +105,24 @@ class PDFTests(unittest.TestCase):
             c.save()
             with self.assertRaises(ValueError):
                 parse_pdf(path, IV)
+
+    def test_ivolunteer_accepts_guangzhou_volunteer_source(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "iv.pdf"
+            make_pdf(path, IV, no_grid=True, source="广州志愿时")
+            parsed = parse_pdf(path, IV)
+        self.assertEqual(len(parsed.activities), 1)
+        self.assertEqual(parsed.activities[0].source, "广州志愿时")
+        self.assertEqual(parsed.activities[0].minutes, Decimal(491))
+
+    def test_email_contains_only_four_evaluation_years(self):
+        report = aggregate(student(), [activity()], 2025, date(2026, 10, 30))
+        plain, html = email_bodies(report)
+        for year in ("2025-2026", "2024-2025", "2023-2024", "2022-2023"):
+            self.assertEqual(html.count("<td>" + year + "</td>"), 1)
+        self.assertNotIn("2026-2027", html)
+        self.assertNotIn("附件包含", plain)
+        self.assertNotIn("活动名称", html)
 
     def test_workbook_contains_summary_details_and_explicit_text(self):
         a = activity()

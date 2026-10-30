@@ -96,7 +96,7 @@ def email_bodies(report):
     for year, value in zip(range(report.evaluation_year, report.evaluation_year - 4, -1), report.evaluation_cells()):
         rows.append(f"<tr><td>{year_label(year)}</td><td>{escape(value)}</td></tr>")
         plain.append(f"{year_label(year)}：{value}" + ("" if value == "未入学" else " 小时"))
-    note = "附件包含入学以来的学年汇总和全部活动明细。按结束日期归属学年；i志愿中来自志愿深圳的记录均已排除。统计仅代表上传材料，未上传的平台不代表实际时长为0。"
+    note = "本表仅展示评选学年及前三个学年的志愿服务时长，不生成个人活动明细附件。按活动结束日期归属学年；i志愿中来自志愿深圳的记录始终排除。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
     plain.extend(["", note])
     plain.extend(report.warnings)
     html = (

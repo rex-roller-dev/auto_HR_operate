@@ -69,14 +69,16 @@ class PipelineTests(unittest.TestCase):
             now = lambda: datetime(2026, 10, 30, tzinfo=timezone(timedelta(hours=8)))
             processor = Processor(cfg, store, downloader=downloader, mailer=mailer, clock=now)
             submission = parse_submission(form(), cfg)
-            def verify_attachment(*args):
-                self.assertTrue(Path(args[-1]).exists())
-            mailer.send.side_effect = verify_attachment
+            def verify_summary_only(*args):
+                self.assertEqual(len(args), 4)
+                self.assertNotIn("全部活动明细", args[2])
+            mailer.send.side_effect = verify_summary_only
             self.assertEqual(processor.run(submission)["status"], "success")
             self.assertEqual(processor.run(submission)["status"], "duplicate")
             self.assertEqual(list(Path(folder).iterdir()), [])
         self.assertEqual(downloader.calls, 1)
         mailer.send.assert_called_once()
+        self.assertFalse(any(key.endswith(".xlsx") for _, key in store.client.data))
         content = store.read(cfg.summary_key).decode("utf-8-sig")
         self.assertIn("8.18", content)
         self.assertIn("未入学", content)

@@ -166,7 +166,7 @@ class SummaryCSV:
     def headers(self):
         return ["姓名", "学号"] + [
             f"{year_label(y)}学年义工时（小时）" for y in range(self.year, self.year - 4, -1)
-        ] + ["评选学年", "明细COS对象键", "提交编号", "处理时间（北京时间）"]
+        ] + ["提交编号", "处理时间（北京时间）"]
 
     def _read(self):
         content = self.store.read(self.key, self.limit) or b""
@@ -205,4 +205,4 @@ class SummaryCSV:
         _, rows = self._read()
         if any(r[-2] == event_id for r in rows[1:]):
             return False
-        raise Busy("汇总表并发追加暂未完成，请重试；个人明细已保留")
+        raise Busy("汇总表并发追加暂未完成，请重试；学年汇总已保留")

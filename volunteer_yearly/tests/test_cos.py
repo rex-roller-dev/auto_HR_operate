@@ -11,8 +11,8 @@ from tests.fakes import FakeCos
 
 
 def row_for(journal, event):
-    return ["测试", "2024123456", "1", "2", "未入学", "未入学", "2025-2026",
-            "details/file.xlsx", event, "2026-10-30T12:00:00+08:00"]
+    return ["测试", "2024123456", "1", "2", "未入学", "未入学",
+            event, "2026-10-30T12:00:00+08:00"]
 
 
 def process_append(data, lock, index):

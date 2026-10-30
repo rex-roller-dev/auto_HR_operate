@@ -11,7 +11,7 @@ from .models import Activity, ParsedPDF, UserError, SZ, IV
 
 DATE = re.compile(r"(?<!\d)(20\d{2})[.\-/年](\d{1,2})[.\-/月](\d{1,2})日?(?:\s+(\d{1,2}):(\d{2}))?")
 DURATION = re.compile(r"(?:(\d+)小?时)?(?:(\d+)分(?:钟)?)?")
-SOURCES = {"i志愿", "志愿深圳", "志愿中山", "江门义工", "志愿时"}
+SOURCES = {"i志愿", "志愿深圳", "志愿中山", "江门义工", "志愿时"} | {"广州志愿时"}
 
 
 def compact(text):

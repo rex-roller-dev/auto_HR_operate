@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import logging
 from pathlib import Path
 import tempfile
 
@@ -9,11 +10,12 @@ from .forms import normalized
 from .mailer import Mailer
 from .models import UserError, ServiceError, aggregate, SZ, IV
 from .parsers import parse_pdf
-from .reporting import write_xlsx, email_bodies
+from .reporting import email_bodies
 from .tokens import TokenManager
 from .wps import WPSDownloader
 
 SHANGHAI = timezone(timedelta(hours=8))
+logger = logging.getLogger("volunteer_yearly")
 
 
 class Processor:
@@ -32,7 +34,8 @@ class Processor:
 
     def run(self, submission):
         cfg = self.settings
-        base = f"{cfg.cos_prefix}/events/{cfg.label}/{submission.event_id}"
+        # 四学年汇总单独记录状态，旧版失败答卷可以在新输出版本中重新处理。
+        base = f"{cfg.cos_prefix}/events/{cfg.label}-summary/{submission.event_id}"
         lease = CosLease(self.store, base + "/job.jsonl", cfg.lease_seconds)
         if not lease.acquire():
             return {"status": "duplicate"}
@@ -41,7 +44,6 @@ class Processor:
         try:
             with tempfile.TemporaryDirectory(prefix="job-", dir=root) as work:
                 work = Path(work)
-                workbook = work / "志愿服务学年汇总与活动明细.xlsx"
                 manifest_key = base + "/prepared.json"
                 manifest = self.store.json(manifest_key, 2 * 1024 * 1024)
                 if manifest is None:
@@ -66,24 +68,16 @@ class Processor:
                             warnings.append(f"未上传{platform}PDF：该平台统计为0仅表示没有提供相应材料")
                     now = self.clock()
                     report = aggregate(submission, records, cfg.evaluation_year, now.date(), warnings)
-                    write_xlsx(report, workbook)
-                    detail_key = f"{cfg.cos_prefix}/details/{cfg.label}/{submission.student_id}/{submission.event_id}.xlsx"
-                    lease.assert_owned()
-                    self.store.put(detail_key, workbook.read_bytes(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     plain, html = email_bodies(report)
-                    row = [submission.name, submission.student_id, *report.evaluation_cells(), cfg.label,
-                           detail_key, submission.event_id, now.isoformat(timespec="seconds")]
+                    row = [submission.name, submission.student_id, *report.evaluation_cells(),
+                           submission.event_id, now.isoformat(timespec="seconds")]
                     manifest = {"event_id": submission.event_id, "student_id": submission.student_id,
-                                "row": row, "detail_key": detail_key, "plain": plain, "html": html}
+                                "row": row, "plain": plain, "html": html}
                     # 先保存可恢复的个人结果；后续重试复用同一统计截止日和同一份结果。
                     self.store.put(manifest_key, json.dumps(manifest, ensure_ascii=False).encode(), "application/json")
                 else:
                     if manifest.get("event_id") != submission.event_id or manifest.get("student_id") != submission.student_id:
                         raise ServiceError("已保存的任务与当前答卷不一致")
-                    content = self.store.read(manifest["detail_key"], 30 * 1024 * 1024)
-                    if content is None:
-                        raise ServiceError("已保存的个人明细缺失，请联系管理员")
-                    workbook.write_bytes(content)
                 lease.assert_owned()
                 SummaryCSV(self.store, cfg.summary_key, cfg.evaluation_year, cfg.max_csv_bytes).append_once(
                     manifest["row"], submission.event_id)
@@ -91,11 +85,12 @@ class Processor:
                 if self.store.json(sent_key) is None:
                     lease.assert_owned()
                     self.mailer.send(submission, f"{cfg.label}学年志愿服务统计结果",
-                                     manifest["plain"], manifest["html"], workbook)
+                                     manifest["plain"], manifest["html"])
                     self.store.put(sent_key, b'{"smtp_accepted":true}', "application/json")
                 lease.finish("done", "success")
                 return {"status": "success"}
         except UserError as exc:
+            logger.warning("material_validation_failed=%s", str(exc))
             # 材料错误可向填写者解释；修改材料后需提交新答卷，保留原申请历史。
             try:
                 lease.assert_owned()
