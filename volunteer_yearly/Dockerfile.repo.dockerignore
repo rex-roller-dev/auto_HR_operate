@@ -1,0 +1,9 @@
+# This file is evaluated against the repository-root build context.
+**
+!volunteer_yearly/
+!volunteer_yearly/requirements.txt
+!volunteer_yearly/app.py
+!volunteer_yearly/yearly/
+!volunteer_yearly/yearly/**
+volunteer_yearly/yearly/**/__pycache__/
+volunteer_yearly/yearly/**/*.pyc

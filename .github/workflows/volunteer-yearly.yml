@@ -30,9 +30,20 @@ jobs:
       - run: python -m unittest discover -s tests -v
   docker:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - layout: project-directory
+            dockerfile: volunteer_yearly/Dockerfile
+            context: volunteer_yearly
+          - layout: repository-root
+            dockerfile: volunteer_yearly/Dockerfile.repo
+            context: .
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --platform linux/amd64 -t volunteer-yearly:test volunteer_yearly
+      - run: docker build --platform linux/amd64 -f ${{ matrix.dockerfile }} -t volunteer-yearly:test ${{ matrix.context }}
+      - run: |
+          docker run --rm --entrypoint python volunteer-yearly:test -c "from pathlib import Path; p=Path('/app'); assert (p/'app.py').is_file(); assert (p/'yearly').is_dir(); assert not any((p/n).exists() for n in ('main.py','token.json','start.sh','.env','.env.example','tests'))"
       - run: |
           docker run -d --name yearly-smoke --read-only --tmpfs /tmp:rw,size=256m -p 9000:9000 -e WPS_BIND_CODE=ci-binding volunteer-yearly:test
           python - <<'PY'
