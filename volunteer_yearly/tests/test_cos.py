@@ -6,7 +6,7 @@ import multiprocessing
 import unittest
 from unittest.mock import patch
 
-from yearly.cosio import CosStore, CosLease, SummaryCSV, Busy, CosProblem
+from yearly.cosio import CosStore, CosLease, SummaryCSV, Busy, CosProblem, client_from_env
 from tests.fakes import FakeCos
 
 
@@ -26,6 +26,10 @@ class CosTests(unittest.TestCase):
         self.client = FakeCos()
         self.store = CosStore(self.client, "bucket")
         self.journal = SummaryCSV(self.store, "summary.csv", 2025)
+
+    def test_real_sdk_client_can_initialize_without_network(self):
+        client = client_from_env("ap-guangzhou", {"X-Scf-Secret-Id": "test-id", "X-Scf-Secret-Key": "test-key", "X-Scf-Session-Token": "test-session"})
+        self.assertTrue(callable(client.append_object))
 
     def rows(self):
         return list(csv.reader(io.StringIO(self.store.read("summary.csv").decode("utf-8-sig"))))

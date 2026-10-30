@@ -29,7 +29,7 @@ def client_from_env(region, headers=None):
     token = headers.get("X-Scf-Session-Token") or os.getenv("TENCENTCLOUD_SESSIONTOKEN") or os.getenv("COS_SESSION_TOKEN")
     if not sid or not key:
         raise ServiceError("未配置COS访问凭据或云函数执行角色")
-    return CosS3Client(CosConfig(Region=region, SecretId=sid, SecretKey=key, Token=token, Scheme="https", Timeout=20, Retry=0))
+    return CosS3Client(CosConfig(Region=region, SecretId=sid, SecretKey=key, Token=token, Scheme="https", Timeout=20), retry=0)
 
 
 class CosStore:
@@ -112,7 +112,7 @@ class CosLease:
     def acquire(self):
         for attempt in range(15):
             content, last = self._read()
-            if last.get("owner") == self.owner and last.get("state") == "running":
+            if last.get("owner") == self.owner and last.get("state") == "running" and last.get("until", 0) > self.now():
                 return True
             if last.get("state") == "done":
                 return False
