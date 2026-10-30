@@ -1,0 +1,63 @@
+name: Volunteer yearly checks
+on:
+  push:
+    branches: ["feature/volunteer-yearly-2025-2026"]
+    paths:
+      - "volunteer_yearly/**"
+      - ".github/workflows/volunteer-yearly.yml"
+  pull_request:
+    paths:
+      - "volunteer_yearly/**"
+      - ".github/workflows/volunteer-yearly.yml"
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: volunteer_yearly
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q app.py yearly tests integration
+      - run: python -m unittest discover -s tests -v
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --platform linux/amd64 -t volunteer-yearly:test volunteer_yearly
+      - run: |
+          docker run -d --name yearly-smoke --read-only --tmpfs /tmp:rw,size=256m -p 9000:9000 -e WPS_BIND_CODE=ci-binding volunteer-yearly:test
+          python - <<'PY'
+          import time, urllib.request, json
+          for attempt in range(30):
+              try:
+                  with urllib.request.urlopen("http://127.0.0.1:9000/healthz", timeout=2) as response:
+                      assert json.load(response)["status"] == "ok"
+                  break
+              except Exception:
+                  if attempt == 29:
+                      raise
+                  time.sleep(1)
+          with urllib.request.urlopen("http://127.0.0.1:9000/event-invoke", timeout=2) as response:
+              assert json.load(response)["bind_code"] == "ci-binding"
+          PY
+      - if: always()
+        run: docker logs yearly-smoke || true
+  package:
+    needs: [test, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git archive --format=zip HEAD:volunteer_yearly --output=volunteer_yearly_2025_2026.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: volunteer_yearly_2025_2026
+          path: volunteer_yearly_2025_2026.zip

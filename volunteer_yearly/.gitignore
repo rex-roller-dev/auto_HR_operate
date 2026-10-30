@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+samples/
+tmp/
+output/
+*.pdf
+*.xlsx
+*.csv
