@@ -1,23 +1,24 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 import json
 from pathlib import Path
 import tempfile
 import threading
 import time
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from yearly.config import Settings
 from yearly.cosio import CosStore, SummaryCSV
 from yearly.forms import parse_submission
 from yearly.service import Processor
 from yearly.tokens import TokenManager
-from yearly.models import IV
+from yearly.models import IV, ParsedPDF
 from tests.fakes import FakeCos
 from tests.test_forms_app import form
 from tests.test_pdf_reporting import make_pdf
+from tests.test_rules import activity
 
 
 class TokenTests(unittest.TestCase):
@@ -61,6 +62,32 @@ class FakeDownloader:
 
 
 class PipelineTests(unittest.TestCase):
+    def test_evaluation_cutoff_follows_configured_school_year(self):
+        for year in (2024, 2025, 2026):
+            with self.subTest(year=year):
+                self.assertEqual(replace(Settings(), evaluation_year=year).evaluation_cutoff,
+                                 date(year + 1, 8, 31))
+
+    def test_fixed_cutoff_controls_summary_and_email_independently_of_processing_date(self):
+        records = [activity("2026-08-31T08:00", "2026-08-31T23:59:59", "4", rid="last-day"),
+                   activity("2026-08-31T08:00", "2026-09-01T00:00", "9", rid="after-cutoff")]
+        zone = timezone(timedelta(hours=8))
+        for processed_at in (datetime(2026, 1, 1, tzinfo=zone), datetime(2026, 10, 31, tzinfo=zone)):
+            with self.subTest(processed_at=processed_at), tempfile.TemporaryDirectory() as folder:
+                store = CosStore(FakeCos(), "bucket")
+                cfg = replace(Settings(), cos_bucket="bucket", temp_root=folder)
+                mailer = Mock()
+                processor = Processor(cfg, store, downloader=FakeDownloader(), mailer=mailer,
+                                      clock=lambda: processed_at)
+                with patch("yearly.service.parse_pdf", return_value=ParsedPDF(records)):
+                    self.assertEqual(processor.run(parse_submission(form(), cfg))["status"], "success")
+                plain, html = mailer.send.call_args.args[2:]
+                self.assertIn("2026-08-31", plain)
+                self.assertIn("2026-08-31", html)
+                _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
+                self.assertEqual(rows[1][2], "4.00")
+                self.assertEqual(rows[1][-1], processed_at.isoformat(timespec="seconds"))
+
     def test_full_processing_cos_upload_summary_mail_and_tmp_cleanup(self):
         store = CosStore(FakeCos(), "bucket")
         downloader, mailer = FakeDownloader(), Mock()

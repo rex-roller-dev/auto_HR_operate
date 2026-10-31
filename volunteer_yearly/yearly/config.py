@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 import os
 import re
 import tempfile
@@ -64,6 +65,10 @@ class Settings:
     @property
     def label(self):
         return f"{self.evaluation_year}-{self.evaluation_year + 1}"
+
+    @property
+    def evaluation_cutoff(self):
+        return date(self.evaluation_year + 1, 8, 31)
 
     @property
     def summary_key(self):

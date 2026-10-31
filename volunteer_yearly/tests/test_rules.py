@@ -39,6 +39,16 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(school_year(date(2025, 8, 31)), 2024)
         self.assertEqual(school_year(date(2025, 9, 1)), 2025)
 
+    def test_evaluation_cutoff_includes_august31_and_excludes_later_end_dates(self):
+        records = [activity("2026-08-31T08:00", "2026-08-31T23:59:59", "4", rid="last-day"),
+                   activity("2026-08-31T08:00", "2026-09-01T00:00", "9", rid="after-cutoff")]
+        report = aggregate(student(), records, 2025, date(2026, 8, 31))
+        self.assertEqual(report.evaluation_cells()[0], "4.00")
+        self.assertTrue(report.details[0].counted)
+        self.assertFalse(report.details[1].counted)
+        self.assertIn("统计截止日", report.details[1].reason)
+        self.assertNotIn(2026, report.totals)
+
     def test_ivol_shenzhen_always_excluded_without_shenzhen_upload(self):
         report = aggregate(student(), [activity(platform=IV, source="志愿 深圳")], 2025, date(2026, 10, 30))
         self.assertEqual(report.totals[2025].total, 0)

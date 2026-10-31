@@ -67,7 +67,7 @@ class Processor:
                         if platform not in uploaded_platforms:
                             warnings.append(f"未上传{platform}PDF：该平台统计为0仅表示没有提供相应材料")
                     now = self.clock()
-                    report = aggregate(submission, records, cfg.evaluation_year, now.date(), warnings)
+                    report = aggregate(submission, records, cfg.evaluation_year, cfg.evaluation_cutoff, warnings)
                     plain, html = email_bodies(report)
                     row = [submission.name, submission.student_id, *report.evaluation_cells(),
                            submission.event_id, now.isoformat(timespec="seconds")]
