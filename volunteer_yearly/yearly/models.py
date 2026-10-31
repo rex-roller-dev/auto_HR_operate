@@ -27,6 +27,17 @@ def hours_text(minutes: Decimal) -> str:
     return str((minutes / 60).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
+def enrollment_year(student_id: str) -> int:
+    """研究生学号以xx00开头，本科生学号以四位入学年份开头。"""
+    if not re.fullmatch(r"[0-9]{6,20}", student_id):
+        raise UserError("学号应为6至20位纯数字；本科生以四位入学年份开头，研究生以两位年份加00开头")
+    if student_id[2:4] == "00":
+        return 2000 + int(student_id[:2])
+    if not student_id.startswith("20"):
+        raise UserError("学号格式无效：本科生以四位入学年份开头，研究生以两位年份加00开头")
+    return int(student_id[:4])
+
+
 @dataclass(frozen=True)
 class Upload:
     platform: str
@@ -45,7 +56,7 @@ class Submission:
 
     @property
     def enrollment(self):
-        return int(self.student_id[:4])
+        return enrollment_year(self.student_id)
 
 
 @dataclass(frozen=True)

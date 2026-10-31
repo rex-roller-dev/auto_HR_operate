@@ -47,7 +47,7 @@ class FormTests(unittest.TestCase):
         self.assertEqual(result.name, "测试同学")
 
     def test_invalid_student_email_and_file(self):
-        for index, value in ((0, "bad\n@example.com"), (3, "2300123456")):
+        for index, value in ((0, "bad\n@example.com"), (3, "2312123456")):
             data = form()
             data["answerContents"][index]["value"] = value
             with self.subTest(value=value), self.assertRaises(UserError):
@@ -56,6 +56,27 @@ class FormTests(unittest.TestCase):
         data["answerContents"][1]["value"][0]["fileName"] = "../test.pdf"
         with self.assertRaises(UserError):
             parse_submission(data, Settings())
+
+    def test_undergraduate_and_graduate_enrollment(self):
+        for student_id, year in (("2023123456", 2023), ("2024123456", 2024),
+                                 ("2300123456", 2023), ("2400123456", 2024),
+                                 ("2000123456", 2020), ("0000123456", 2000),
+                                 ("2600123456", 2026)):
+            data = form()
+            data["answerContents"][3]["value"] = student_id
+            with self.subTest(student_id=student_id):
+                result = parse_submission(data, Settings(), date(2026, 10, 31))
+                self.assertEqual(result.student_id, student_id)
+                self.assertEqual(result.enrollment, year)
+
+    def test_invalid_student_formats_and_future_years(self):
+        for student_id in ("2300", "23001", "2300" + "1" * 17,
+                           "2300abc123", "23 00123456", "2312123456",
+                           "2027123456", "2700123456", "9900123456"):
+            data = form()
+            data["answerContents"][3]["value"] = student_id
+            with self.subTest(student_id=student_id), self.assertRaises(UserError):
+                parse_submission(data, Settings(), date(2026, 10, 31))
 
     def test_no_uploads_fails(self):
         data = form()
@@ -140,6 +161,14 @@ class AppTests(unittest.TestCase):
         response = self.client.post("/event-invoke", json=form())
         self.assertEqual(response.status_code, 200)
         self.processor.run.assert_called_once()
+
+    def test_graduate_callback_is_accepted_with_correct_enrollment(self):
+        data = form()
+        data["answerContents"][3]["value"] = "2300123456"
+        response = self.client.post("/event-invoke", json=data)
+        self.assertEqual(response.status_code, 200)
+        self.processor.run.assert_called_once()
+        self.assertEqual(self.processor.run.call_args.args[0].enrollment, 2023)
 
     def test_secret_and_malformed_body(self):
         app = create_app(replace(Settings(), callback_secret="expected"))

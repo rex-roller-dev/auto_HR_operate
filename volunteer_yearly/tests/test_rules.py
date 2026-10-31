@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
 import unittest
@@ -16,6 +17,19 @@ def student(year="2024"):
 
 
 class RulesTests(unittest.TestCase):
+    def test_graduate_and_undergraduate_share_enrollment_rules(self):
+        records = [activity("2022-10-01", "2022-10-02", rid="before"),
+                   activity("2023-08-31", "2023-09-01", rid="enrolled")]
+        undergraduate = replace(student(), student_id="2023123456")
+        graduate = replace(student(), student_id="2300123456")
+        undergrad_report = aggregate(undergraduate, records, 2025, date(2026, 10, 31))
+        grad_report = aggregate(graduate, records, 2025, date(2026, 10, 31))
+        self.assertEqual(graduate.enrollment, 2023)
+        self.assertEqual(grad_report.evaluation_cells(), ["0.00", "0.00", "4.00", "未入学"])
+        self.assertEqual(grad_report.evaluation_cells(), undergrad_report.evaluation_cells())
+        self.assertEqual(grad_report.details[0].reason, "未入学")
+        self.assertTrue(grad_report.details[1].counted)
+
     def test_september_boundary_uses_end_date_and_counts_once(self):
         report = aggregate(student(), [activity()], 2025, date(2026, 10, 30))
         self.assertEqual(report.totals[2025].total, Decimal(240))

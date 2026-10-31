@@ -6,7 +6,7 @@ import re
 import unicodedata
 from urllib.parse import urlsplit
 
-from .models import Submission, Upload, UserError, SZ, IV
+from .models import Submission, Upload, UserError, SZ, IV, enrollment_year
 
 
 def normalized(value):
@@ -72,12 +72,10 @@ def parse_submission(data, settings, today=None):
     email = value_of(find_field(answers, settings.email_field, ("电子邮箱", "邮箱地址", "请输入邮箱")))
     if not name or len(name) > 80:
         raise UserError("请填写有效的姓名")
-    if not re.fullmatch(r"20\d{2}\d{2,16}", student):
-        raise UserError("学号应为纯数字，且前四位为入学年份，例如2024")
-    enrollment = int(student[:4])
+    enrollment = enrollment_year(student)
     today = today or date.today()
     if enrollment < 2000 or enrollment > today.year:
-        raise UserError("学号前四位不是有效的入学年份")
+        raise UserError("学号中的入学年份无效或晚于当前年份")
     if not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_\x60{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?\.[A-Za-z]{2,63}", email) or len(email) > 254:
         raise UserError("请填写有效的邮箱地址")
     aid = str(data.get("aid", "")).strip()
