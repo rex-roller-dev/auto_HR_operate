@@ -93,16 +93,22 @@ def email_bodies(report):
     rows = []
     plain = [f"{report.submission.name} 同学，您好：", "", f"评选学年：{year_label(report.evaluation_year)}",
              f"统计截止日期：{report.as_of.isoformat()}", ""]
-    for year, value in zip(range(report.evaluation_year, report.evaluation_year - 4, -1), report.evaluation_cells()):
-        rows.append(f"<tr><td>{year_label(year)}</td><td>{escape(value)}</td></tr>")
+    years = list(report.enrollment_years)
+    for index, (year, value) in enumerate(zip(years, report.evaluation_cells())):
+        total_cell = (f'<td rowspan="{len(years)}">{report.material_hours}</td>' if index == 0 else "")
+        rows.append(f"<tr><td>{year_label(year)}</td><td>{escape(value)}</td>{total_cell}</tr>")
         plain.append(f"{year_label(year)}：{value}" + ("" if value == "未入学" else " 小时"))
-    note = "本表仅展示评选学年及前三个学年的志愿服务时长，不生成个人活动明细附件。按活动结束日期归属学年；i志愿中来自志愿深圳的记录始终排除。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
+    if not years:
+        plain.append("截至评选学年尚未入学")
+        rows.append(f'<tr><td colspan="2">截至评选学年尚未入学</td><td>{report.material_hours}</td></tr>')
+    plain.append(f"材料总时长：{report.material_hours} 小时")
+    note = "学年汇总从入学学年列至评选学年；材料总时长包含入学前的有效记录。两者均按活动结束日期统计至截止日（含当天），排除培训时长、重复记录及i志愿中来自志愿深圳的记录。不生成个人活动明细附件。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
     plain.extend(["", note])
     plain.extend(report.warnings)
     html = (
         f"<p>{escape(report.submission.name)} 同学，您好：</p>"
         f"<p>评选学年：{year_label(report.evaluation_year)}；统计截止：{report.as_of.isoformat()}</p>"
-        '<table border="1" cellspacing="0" cellpadding="8"><tr><th>学年</th><th>服务时长（小时）</th></tr>'
+        '<table border="1" cellspacing="0" cellpadding="8"><tr><th>学年</th><th>服务时长（小时）</th><th>材料总时长（小时）</th></tr>'
         + "".join(rows) + f"</table><p>{note}</p>"
         + "".join(f"<p>{escape(w)}</p>" for w in report.warnings)
     )

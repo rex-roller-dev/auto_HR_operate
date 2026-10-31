@@ -122,13 +122,25 @@ class Report:
     totals: dict[int, YearTotal]
     details: list[Detail]
     warnings: list[str]
+    material_minutes: Decimal = Decimal(0)
 
-    def evaluation_cells(self):
+    @property
+    def enrollment_years(self):
+        return range(self.evaluation_year, self.submission.enrollment - 1, -1)
+
+    @property
+    def material_hours(self):
+        return hours_text(self.material_minutes)
+
+    def year_cells(self, years):
         return [
             "未入学" if year < self.submission.enrollment
             else hours_text(self.totals.get(year, YearTotal(year)).total)
-            for year in range(self.evaluation_year, self.evaluation_year - 4, -1)
+            for year in years
         ]
+
+    def evaluation_cells(self):
+        return self.year_cells(self.enrollment_years)
 
 
 def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
@@ -138,6 +150,7 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
     }
     details = []
     seen = {}
+    material_minutes = Decimal(0)
     for activity in activities:
         reason = ""
         if activity.minutes < 0 or not activity.minutes.is_finite() or activity.end < activity.begin:
@@ -154,10 +167,12 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
             reason = "i志愿来源为志愿深圳，按规则排除"
         if not reason and activity.kind == "培训时长":
             reason = "培训时长不计入服务时长"
-        if not reason and activity.year < submission.enrollment:
-            reason = "未入学"
         if not reason and activity.end.date() > as_of:
             reason = "活动结束日期晚于统计截止日"
+        if not reason:
+            material_minutes += activity.minutes
+        if not reason and activity.year < submission.enrollment:
+            reason = "未入学"
         details.append(Detail(activity, reason))
         if not reason:
             total = totals.setdefault(activity.year, YearTotal(activity.year))
@@ -165,4 +180,4 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
                 total.shenzhen += activity.minutes
             else:
                 total.ivolunteer += activity.minutes
-    return Report(submission, evaluation_year, as_of, totals, details, list(warnings or []))
+    return Report(submission, evaluation_year, as_of, totals, details, list(warnings or []), material_minutes)

@@ -34,14 +34,15 @@ class Processor:
 
     def run(self, submission):
         cfg = self.settings
-        # 四学年汇总单独记录状态，旧版失败答卷可以在新输出版本中重新处理。
-        base = f"{cfg.cos_prefix}/events/{cfg.label}-summary/{submission.event_id}"
+        # 新格式单独保存状态，避免复用旧版四学年表格和邮件。
+        base = f"{cfg.cos_prefix}/events/{cfg.label}-history-total/{submission.event_id}"
         lease = CosLease(self.store, base + "/job.jsonl", cfg.lease_seconds)
         if not lease.acquire():
             return {"status": "duplicate"}
         root = Path(cfg.temp_root or (Path(tempfile.gettempdir()) / "volunteer-yearly"))
         root.mkdir(parents=True, exist_ok=True)
         try:
+            summary = SummaryCSV(self.store, cfg.summary_key, cfg.evaluation_year, cfg.max_csv_bytes)
             with tempfile.TemporaryDirectory(prefix="job-", dir=root) as work:
                 work = Path(work)
                 manifest_key = base + "/prepared.json"
@@ -69,8 +70,8 @@ class Processor:
                     now = self.clock()
                     report = aggregate(submission, records, cfg.evaluation_year, cfg.evaluation_cutoff, warnings)
                     plain, html = email_bodies(report)
-                    row = [submission.name, submission.student_id, *report.evaluation_cells(),
-                           submission.event_id, now.isoformat(timespec="seconds")]
+                    row = [submission.name, submission.student_id, *report.year_cells(summary.years),
+                           report.material_hours, submission.event_id, now.isoformat(timespec="seconds")]
                     manifest = {"event_id": submission.event_id, "student_id": submission.student_id,
                                 "row": row, "plain": plain, "html": html}
                     # 先保存可恢复的个人结果；后续重试复用同一统计截止日和同一份结果。
@@ -79,8 +80,7 @@ class Processor:
                     if manifest.get("event_id") != submission.event_id or manifest.get("student_id") != submission.student_id:
                         raise ServiceError("已保存的任务与当前答卷不一致")
                 lease.assert_owned()
-                SummaryCSV(self.store, cfg.summary_key, cfg.evaluation_year, cfg.max_csv_bytes).append_once(
-                    manifest["row"], submission.event_id)
+                summary.append_once(manifest["row"], submission.event_id)
                 sent_key = base + "/sent.json"
                 if self.store.json(sent_key) is None:
                     lease.assert_owned()

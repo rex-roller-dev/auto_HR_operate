@@ -115,14 +115,28 @@ class PDFTests(unittest.TestCase):
         self.assertEqual(parsed.activities[0].source, "广州志愿时")
         self.assertEqual(parsed.activities[0].minutes, Decimal(491))
 
-    def test_email_contains_only_four_evaluation_years(self):
-        report = aggregate(student(), [activity()], 2025, date(2026, 10, 30))
+    def test_email_contains_all_enrolled_years_and_material_total_column(self):
+        report = aggregate(student("2020"), [activity(rid="now"),
+                           activity("2019-10-01", "2019-10-02", "3", rid="before")],
+                           2025, date(2026, 8, 31))
         plain, html = email_bodies(report)
-        for year in ("2025-2026", "2024-2025", "2023-2024", "2022-2023"):
+        for year in ("2025-2026", "2024-2025", "2023-2024", "2022-2023", "2021-2022", "2020-2021"):
             self.assertEqual(html.count("<td>" + year + "</td>"), 1)
+        self.assertNotIn("<td>2019-2020</td>", html)
         self.assertNotIn("2026-2027", html)
+        self.assertIn("<th>材料总时长（小时）</th>", html)
+        self.assertIn('<td rowspan="6">7.00</td>', html)
+        self.assertIn("材料总时长：7.00 小时", plain)
         self.assertNotIn("附件包含", plain)
         self.assertNotIn("活动名称", html)
+
+    def test_email_total_still_shown_if_enrollment_is_after_evaluation_year(self):
+        report = aggregate(student("2026"), [activity()], 2025, date(2026, 8, 31))
+        plain, html = email_bodies(report)
+        self.assertIn("截至评选学年尚未入学", plain)
+        self.assertIn("材料总时长：4.00 小时", plain)
+        self.assertNotIn('rowspan="0"', html)
+        self.assertNotIn("<td>2026-2027</td>", html)
 
     def test_workbook_contains_summary_details_and_explicit_text(self):
         a = activity()

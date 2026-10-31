@@ -11,7 +11,8 @@ from tests.fakes import FakeCos
 
 
 def row_for(journal, event):
-    return ["测试", "2024123456", "1", "2", "未入学", "未入学",
+    years = [str(2026 - year) if year >= 2024 else "未入学" for year in journal.years]
+    return ["测试", "2024123456", *years, "3.00",
             event, "2026-10-30T12:00:00+08:00"]
 
 
@@ -33,6 +34,14 @@ class CosTests(unittest.TestCase):
 
     def rows(self):
         return list(csv.reader(io.StringIO(self.store.read("summary.csv").decode("utf-8-sig"))))
+
+    def test_schema_covers_every_supported_enrollment_year_and_material_total(self):
+        self.assertEqual(list(self.journal.years), list(range(2025, 1999, -1)))
+        self.assertIn("2000-2001学年义工时（小时）", self.journal.headers)
+        self.assertEqual(self.journal.headers[-3], "材料总时长（小时）")
+        self.journal.append_once(row_for(self.journal, "one"), "one")
+        self.assertEqual(self.rows()[1][-3], "3.00")
+        self.assertEqual(len(self.rows()[1]), len(self.journal.headers))
 
     def test_append_is_idempotent_and_new_submissions_retained(self):
         for event in ("one", "one", "two"):

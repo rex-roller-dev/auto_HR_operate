@@ -163,10 +163,15 @@ class SummaryCSV:
         self.store, self.key, self.year, self.limit = store, key, year, limit
 
     @property
+    def years(self):
+        # Cover every accepted enrollment year without rewriting concurrent rows.
+        return range(self.year, 1999, -1)
+
+    @property
     def headers(self):
         return ["姓名", "学号"] + [
-            f"{year_label(y)}学年义工时（小时）" for y in range(self.year, self.year - 4, -1)
-        ] + ["提交编号", "处理时间（北京时间）"]
+            f"{year_label(y)}学年义工时（小时）" for y in self.years
+        ] + ["材料总时长（小时）", "提交编号", "处理时间（北京时间）"]
 
     def _read(self):
         content = self.store.read(self.key, self.limit) or b""

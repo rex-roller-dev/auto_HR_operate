@@ -72,4 +72,4 @@ class Settings:
 
     @property
     def summary_key(self):
-        return f"{self.cos_prefix}/summaries/{self.label}-summary.csv"
+        return f"{self.cos_prefix}/summaries/{self.label}-history-total.csv"

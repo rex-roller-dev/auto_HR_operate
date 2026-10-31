@@ -62,6 +62,44 @@ class FakeDownloader:
 
 
 class PipelineTests(unittest.TestCase):
+    def test_two_pdfs_write_lifetime_total_and_full_history_to_email_and_csv(self):
+        sz_records = [activity("2019-10-01", "2019-10-02", "2", rid="before"),
+                      activity("2020-10-01", "2020-10-02", "3", rid="enrolled"),
+                      activity("2021-10-01", "2021-10-02", "5", rid="training", kind="培训时长")]
+        iv_records = [activity("2025-10-01", "2025-10-02", "4", platform=IV),
+                      activity("2021-11-01", "2021-11-02", "100", platform=IV, source="志愿深圳"),
+                      activity("2026-08-31", "2026-09-01", "99", platform=IV)]
+        store = CosStore(FakeCos(), "bucket")
+        downloader, mailer = FakeDownloader(), Mock()
+        with tempfile.TemporaryDirectory() as folder:
+            cfg = replace(Settings(), cos_bucket="bucket", temp_root=folder)
+            legacy_key = f"{cfg.cos_prefix}/summaries/{cfg.label}-summary.csv"
+            store.put(legacy_key, b"legacy archive", "text/csv")
+            data = form()
+            data["answerContents"][3]["value"] = "2000123456"
+            data["answerContents"][4]["value"] = [{"fileName": "sz.pdf", "fileId": "sz-file"}]
+            processor = Processor(cfg, store, downloader=downloader, mailer=mailer)
+            with patch("yearly.service.parse_pdf", side_effect=[ParsedPDF(sz_records), ParsedPDF(iv_records)]):
+                submission = parse_submission(data, cfg)
+                self.assertEqual(processor.run(submission)["status"], "success")
+                self.assertEqual(processor.run(submission)["status"], "duplicate")
+            self.assertEqual(list(Path(folder).iterdir()), [])
+            self.assertEqual(store.read(legacy_key), b"legacy archive")
+        _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
+        header, row = rows
+        self.assertEqual(row[header.index("材料总时长（小时）")], "9.00")
+        self.assertEqual(row[header.index("2020-2021学年义工时（小时）")], "3.00")
+        self.assertEqual(row[header.index("2025-2026学年义工时（小时）")], "4.00")
+        self.assertEqual(row[header.index("2019-2020学年义工时（小时）")], "未入学")
+        self.assertEqual(downloader.calls, 2)
+        mailer.send.assert_called_once()
+        self.assertEqual(len(mailer.send.call_args.args), 4)
+        plain, html = mailer.send.call_args.args[2:]
+        self.assertIn("材料总时长：9.00 小时", plain)
+        self.assertIn("<td>2020-2021</td>", html)
+        self.assertIn('<td rowspan="6">9.00</td>', html)
+        self.assertFalse(any(key.endswith(".xlsx") for _, key in store.client.data))
+
     def test_evaluation_cutoff_follows_configured_school_year(self):
         for year in (2024, 2025, 2026):
             with self.subTest(year=year):
