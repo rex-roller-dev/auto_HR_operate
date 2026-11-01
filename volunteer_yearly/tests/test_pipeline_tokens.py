@@ -17,7 +17,7 @@ from yearly.tokens import TokenManager
 from yearly.models import IV, ParsedPDF
 from tests.fakes import FakeCos
 from tests.test_forms_app import form
-from tests.test_pdf_reporting import make_pdf
+from tests.test_pdf_reporting import make_pdf, make_date_pdf
 from tests.test_rules import activity
 
 
@@ -62,6 +62,38 @@ class FakeDownloader:
 
 
 class PipelineTests(unittest.TestCase):
+    def test_undated_pdf_succeeds_and_warning_survives_smtp_retry(self):
+        class MissingDateDownloader(FakeDownloader):
+            def download(self, upload, destination):
+                self.calls += 1
+                make_date_pdf(destination, date_values=("-", "2026-08-30\n2026-08-31"), durations=("12", "2"))
+                return destination
+        store = CosStore(FakeCos(), "bucket")
+        downloader, mailer = MissingDateDownloader(), Mock()
+        mailer.send.side_effect = [RuntimeError("simulated smtp failure"), None]
+        with tempfile.TemporaryDirectory() as folder:
+            cfg = replace(Settings(), cos_bucket="bucket", temp_root=folder)
+            data = form()
+            data["answerContents"][1]["value"] = []
+            data["answerContents"][4]["value"] = [{"fileName": "sz.pdf", "fileId": "sz-file"}]
+            processor = Processor(cfg, store, downloader=downloader, mailer=mailer)
+            submission = parse_submission(data, cfg)
+            with self.assertRaises(RuntimeError):
+                processor.run(submission)
+            self.assertEqual(processor.run(submission)["status"], "success")
+            self.assertEqual(processor.run(submission)["status"], "duplicate")
+            self.assertEqual(downloader.calls, 1)
+            self.assertEqual(list(Path(folder).iterdir()), [])
+        mailer.failure.assert_not_called()
+        _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
+        self.assertEqual(len(rows), 2)
+        header, row = rows
+        self.assertEqual(row[header.index("材料总时长（小时）")], "14.00")
+        self.assertEqual(row[header.index("2025-2026学年义工时（小时）")], "2.00")
+        plain, html = mailer.send.call_args.args[2:]
+        self.assertIn("12.00 小时志愿服务记录（1条）", plain)
+        self.assertIn("未计入任何学年", html)
+
     def test_two_pdfs_write_lifetime_total_and_full_history_to_email_and_csv(self):
         sz_records = [activity("2019-10-01", "2019-10-02", "2", rid="before"),
                       activity("2020-10-01", "2020-10-02", "3", rid="enrolled"),

@@ -63,8 +63,8 @@ class Submission:
 class Activity:
     platform: str
     title: str
-    begin: datetime
-    end: datetime
+    begin: datetime | None
+    end: datetime | None
     minutes: Decimal
     source: str
     filename: str
@@ -73,12 +73,18 @@ class Activity:
     kind: str = "服务时长"
 
     @property
+    def has_complete_dates(self):
+        return self.begin is not None and self.end is not None
+
+    @property
     def year(self):
-        return school_year(self.end.date())
+        return school_year(self.end.date()) if self.has_complete_dates else None
 
     @property
     def identity(self):
         if self.platform == SZ and self.record_id:
+            return (self.platform, self.record_id)
+        if not self.has_complete_dates and self.record_id:
             return (self.platform, self.record_id)
         return (
             self.platform, re.sub(r"\s+", "", self.title),
@@ -123,6 +129,8 @@ class Report:
     details: list[Detail]
     warnings: list[str]
     material_minutes: Decimal = Decimal(0)
+    undated_minutes: Decimal = Decimal(0)
+    undated_count: int = 0
 
     @property
     def enrollment_years(self):
@@ -131,6 +139,10 @@ class Report:
     @property
     def material_hours(self):
         return hours_text(self.material_minutes)
+
+    @property
+    def undated_hours(self):
+        return hours_text(self.undated_minutes)
 
     def year_cells(self, years):
         return [
@@ -151,9 +163,13 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
     details = []
     seen = {}
     material_minutes = Decimal(0)
+    undated_minutes = Decimal(0)
+    undated_count = 0
     for activity in activities:
         reason = ""
-        if activity.minutes < 0 or not activity.minutes.is_finite() or activity.end < activity.begin:
+        if activity.minutes < 0 or not activity.minutes.is_finite() or (
+            activity.has_complete_dates and activity.end < activity.begin
+        ):
             raise UserError("PDF存在日期或核定时长无效的活动记录")
         previous = seen.get(activity.identity)
         if previous:
@@ -167,10 +183,14 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
             reason = "i志愿来源为志愿深圳，按规则排除"
         if not reason and activity.kind == "培训时长":
             reason = "培训时长不计入服务时长"
-        if not reason and activity.end.date() > as_of:
+        if not reason and any(day.date() > as_of for day in (activity.begin, activity.end) if day is not None):
             reason = "活动结束日期晚于统计截止日"
         if not reason:
             material_minutes += activity.minutes
+        if not reason and not activity.has_complete_dates:
+            undated_minutes += activity.minutes
+            undated_count += 1
+            reason = "活动日期缺失或不完整，仅计入材料总时长"
         if not reason and activity.year < submission.enrollment:
             reason = "未入学"
         details.append(Detail(activity, reason))
@@ -180,4 +200,11 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
                 total.shenzhen += activity.minutes
             else:
                 total.ivolunteer += activity.minutes
-    return Report(submission, evaluation_year, as_of, totals, details, list(warnings or []), material_minutes)
+    notes = list(warnings or [])
+    if undated_count:
+        notes.append(
+            f"您有 {hours_text(undated_minutes)} 小时志愿服务记录（{undated_count}条）缺少完整活动日期，"
+            f"已计入材料总时长，未计入任何学年的时长统计；这部分记录无法核验是否在 {as_of.isoformat()} 截止前发生。"
+        )
+    return Report(submission, evaluation_year, as_of, totals, details, notes,
+                  material_minutes, undated_minutes, undated_count)

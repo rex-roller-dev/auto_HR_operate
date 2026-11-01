@@ -49,8 +49,10 @@ def write_xlsx(report, destination):
                    "核定时长（小时）", "计入时长（小时）", "是否计入", "排除原因", "考勤编号", "原附件", "页码", "时长类型"])
     for index, item in enumerate(report.details, 1):
         a = item.activity
-        detail.append([index, a.platform, a.source, a.title, a.begin.isoformat(" "), a.end.isoformat(" "),
-                       year_label(a.year), float(a.minutes / 60), float(a.minutes / 60) if item.counted else 0,
+        detail.append([index, a.platform, a.source, a.title,
+                       a.begin.isoformat(" ") if a.begin else "", a.end.isoformat(" ") if a.end else "",
+                       year_label(a.year) if a.year is not None else "日期缺失",
+                       float(a.minutes / 60), float(a.minutes / 60) if item.counted else 0,
                        "是" if item.counted else "否", item.reason, a.record_id, a.filename, a.page, a.kind])
         for col in (2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 15):
             text_cell(detail.cell(index + 1, col), detail.cell(index + 1, col).value or "")
@@ -102,7 +104,7 @@ def email_bodies(report):
         plain.append("截至评选学年尚未入学")
         rows.append(f'<tr><td colspan="2">截至评选学年尚未入学</td><td>{report.material_hours}</td></tr>')
     plain.append(f"材料总时长：{report.material_hours} 小时")
-    note = "学年汇总从入学学年列至评选学年；材料总时长包含入学前的有效记录。两者均按活动结束日期统计至截止日（含当天），排除培训时长、重复记录及i志愿中来自志愿深圳的记录。不生成个人活动明细附件。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
+    note = "学年汇总从入学学年列至评选学年；材料总时长包含入学前的有效记录。日期完整的记录按活动结束日期统计至截止日（含当天）；日期缺失的记录仅计入材料总时长，并单独提示。两者均排除培训时长、重复记录及i志愿中来自志愿深圳的记录。不生成个人活动明细附件。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
     plain.extend(["", note])
     plain.extend(report.warnings)
     html = (

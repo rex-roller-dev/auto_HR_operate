@@ -17,6 +17,26 @@ def student(year="2024"):
 
 
 class RulesTests(unittest.TestCase):
+    def test_undated_records_only_enter_material_total_and_keep_exclusions(self):
+        missing = replace(activity(hours="12", rid="missing"), begin=None, end=None)
+        records = [missing, missing, activity(hours="2", rid="known"),
+                   replace(missing, record_id="training", kind="培训时长"),
+                   replace(missing, record_id="excluded-source", platform=IV, source="志愿深圳")]
+        report = aggregate(student(), records, 2025, date(2026, 8, 31))
+        self.assertEqual(report.material_hours, "14.00")
+        self.assertEqual(report.evaluation_cells()[0], "2.00")
+        self.assertEqual(report.undated_hours, "12.00")
+        self.assertEqual(report.undated_count, 1)
+        self.assertIn("未计入任何学年", report.warnings[0])
+
+    def test_incomplete_dates_remain_out_of_years_and_known_late_date_is_excluded(self):
+        before = replace(activity(hours="3", rid="partial"), end=None)
+        after = replace(activity("2026-09-01", "2026-09-02", "99", rid="late"), end=None)
+        report = aggregate(student(), [before, after], 2025, date(2026, 8, 31))
+        self.assertEqual(report.material_hours, "3.00")
+        self.assertEqual(report.undated_hours, "3.00")
+        self.assertEqual(report.evaluation_cells(), ["0.00", "0.00"])
+
     def test_graduate_and_undergraduate_share_enrollment_rules(self):
         records = [activity("2022-10-01", "2022-10-02", rid="before"),
                    activity("2023-08-31", "2023-09-01", rid="enrolled")]
