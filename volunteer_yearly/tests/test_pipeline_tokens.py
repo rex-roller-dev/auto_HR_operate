@@ -94,8 +94,9 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("12.00 小时志愿服务记录（1条）", plain)
         self.assertIn("未计入任何学年", html)
 
-    def test_two_pdfs_write_lifetime_total_and_full_history_to_email_and_csv(self):
-        sz_records = [activity("2019-10-01", "2019-10-02", "2", rid="before"),
+    def test_two_pdfs_write_ten_year_email_and_full_history_csv(self):
+        sz_records = [activity("2013-10-01", "2013-10-02", "2", rid="before"),
+                      activity("2015-10-01", "2015-10-02", "6", rid="older"),
                       activity("2020-10-01", "2020-10-02", "3", rid="enrolled"),
                       activity("2021-10-01", "2021-10-02", "5", rid="training", kind="培训时长")]
         iv_records = [activity("2025-10-01", "2025-10-02", "4", platform=IV),
@@ -108,7 +109,7 @@ class PipelineTests(unittest.TestCase):
             legacy_key = f"{cfg.cos_prefix}/summaries/{cfg.label}-summary.csv"
             store.put(legacy_key, b"legacy archive", "text/csv")
             data = form()
-            data["answerContents"][3]["value"] = "2000123456"
+            data["answerContents"][3]["value"] = "2014123456"
             data["answerContents"][4]["value"] = [{"fileName": "sz.pdf", "fileId": "sz-file"}]
             processor = Processor(cfg, store, downloader=downloader, mailer=mailer)
             with patch("yearly.service.parse_pdf", side_effect=[ParsedPDF(sz_records), ParsedPDF(iv_records)]):
@@ -119,17 +120,20 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(store.read(legacy_key), b"legacy archive")
         _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
         header, row = rows
-        self.assertEqual(row[header.index("材料总时长（小时）")], "9.00")
+        self.assertEqual(row[header.index("材料总时长（小时）")], "15.00")
+        self.assertEqual(row[header.index("2015-2016学年义工时（小时）")], "6.00")
         self.assertEqual(row[header.index("2020-2021学年义工时（小时）")], "3.00")
         self.assertEqual(row[header.index("2025-2026学年义工时（小时）")], "4.00")
-        self.assertEqual(row[header.index("2019-2020学年义工时（小时）")], "未入学")
+        self.assertEqual(row[header.index("2013-2014学年义工时（小时）")], "未入学")
         self.assertEqual(downloader.calls, 2)
         mailer.send.assert_called_once()
         self.assertEqual(len(mailer.send.call_args.args), 4)
         plain, html = mailer.send.call_args.args[2:]
-        self.assertIn("材料总时长：9.00 小时", plain)
-        self.assertIn("<td>2020-2021</td>", html)
-        self.assertIn('<td rowspan="6">9.00</td>', html)
+        self.assertIn("材料总时长：15.00 小时", plain)
+        self.assertIn("<td>2016-2017</td>", html)
+        self.assertNotIn("2015-2016", plain)
+        self.assertNotIn("2015-2016", html)
+        self.assertIn('<td rowspan="10">15.00</td>', html)
         self.assertFalse(any(key.endswith(".xlsx") for _, key in store.client.data))
 
     def test_evaluation_cutoff_follows_configured_school_year(self):
