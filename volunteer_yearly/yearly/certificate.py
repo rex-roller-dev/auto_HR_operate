@@ -12,6 +12,10 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from .models import ServiceError
+
+SEAL_PATH = Path(__file__).with_name("assets") / "seal.png"
+
 pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
 
 
@@ -46,6 +50,7 @@ class SummaryHTML(HTMLParser):
 
 
 def _render_template(html, issued_on):
+    date_text = f"{issued_on.year} 年 {issued_on.month} 月 {issued_on.day} 日"
     parsed = SummaryHTML()
     parsed.feed(html)
     body = ParagraphStyle("body", fontName="STSong-Light", fontSize=11, leading=18,
@@ -72,12 +77,22 @@ def _render_template(html, issued_on):
     story.append(KeepTogether([
         Spacer(1, 18),
         Paragraph("深圳大学志愿者联合会", signature),
-        Paragraph(f"{issued_on.year} 年 {issued_on.month} 月 {issued_on.day} 日", signature),
+        Paragraph(date_text, signature),
     ]))
     buffer = BytesIO()
     SimpleDocTemplate(buffer, pagesize=A4, leftMargin=54, rightMargin=54,
                       topMargin=54, bottomMargin=54).build(story)
-    return buffer.getvalue()
+    with pymupdf.open(stream=buffer.getvalue(), filetype="pdf") as document:
+        page = document[-1]
+        dates = page.search_for(date_text)
+        if not dates:
+            raise ServiceError("无法定位证明的落款日期")
+        date_rect = dates[-1]
+        center = (date_rect.tl + date_rect.br) / 2
+        # 原Docker项目以130×130点的区域插入同一公章，保留比例及透明背景。
+        stamp_rect = pymupdf.Rect(center.x - 65, center.y - 65, center.x + 65, center.y + 65)
+        page.insert_image(stamp_rect, filename=str(SEAL_PATH), overlay=True)
+        return document.tobytes(garbage=4, deflate=True)
 
 
 def write_certificate(html, issued_on, destination):
@@ -85,7 +100,7 @@ def write_certificate(html, issued_on, destination):
     with pymupdf.open(stream=_render_template(html, issued_on), filetype="pdf") as source:
         with pymupdf.open() as result:
             for page in source:
-                image = page.get_pixmap(dpi=300, colorspace=pymupdf.csGRAY, alpha=False)
+                image = page.get_pixmap(dpi=300, colorspace=pymupdf.csRGB, alpha=False)
                 target = result.new_page(width=page.rect.width, height=page.rect.height)
                 target.insert_image(target.rect, pixmap=image)
             result.set_metadata({"title": "志愿服务证明"})
