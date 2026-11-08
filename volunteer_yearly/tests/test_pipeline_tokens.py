@@ -9,6 +9,8 @@ import time
 import unittest
 from unittest.mock import Mock, patch
 
+import pymupdf
+
 from yearly.config import Settings
 from yearly.cosio import CosStore, SummaryCSV
 from yearly.forms import parse_submission
@@ -90,7 +92,7 @@ class PipelineTests(unittest.TestCase):
         header, row = rows
         self.assertEqual(row[header.index("材料总时长（小时）")], "14.00")
         self.assertEqual(row[header.index("2025-2026学年义工时（小时）")], "2.00")
-        plain, html = mailer.send.call_args.args[2:]
+        plain, html = mailer.send.call_args.args[2:4]
         self.assertIn("12.00 小时志愿服务记录（1条）", plain)
         self.assertIn("未计入任何学年", html)
 
@@ -127,8 +129,8 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(row[header.index("2013-2014学年义工时（小时）")], "未入学")
         self.assertEqual(downloader.calls, 2)
         mailer.send.assert_called_once()
-        self.assertEqual(len(mailer.send.call_args.args), 4)
-        plain, html = mailer.send.call_args.args[2:]
+        self.assertEqual(len(mailer.send.call_args.args), 5)
+        plain, html = mailer.send.call_args.args[2:4]
         self.assertIn("材料总时长：15.00 小时", plain)
         self.assertIn("<td>2016-2017</td>", html)
         self.assertNotIn("2015-2016", plain)
@@ -155,7 +157,7 @@ class PipelineTests(unittest.TestCase):
                                       clock=lambda: processed_at)
                 with patch("yearly.service.parse_pdf", return_value=ParsedPDF(records)):
                     self.assertEqual(processor.run(parse_submission(form(), cfg))["status"], "success")
-                plain, html = mailer.send.call_args.args[2:]
+                plain, html = mailer.send.call_args.args[2:4]
                 self.assertIn("2026-08-31", plain)
                 self.assertIn("2026-08-31", html)
                 _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
@@ -170,10 +172,15 @@ class PipelineTests(unittest.TestCase):
             now = lambda: datetime(2026, 10, 30, tzinfo=timezone(timedelta(hours=8)))
             processor = Processor(cfg, store, downloader=downloader, mailer=mailer, clock=now)
             submission = parse_submission(form(), cfg)
-            def verify_summary_only(*args):
-                self.assertEqual(len(args), 4)
+            def verify_certificate(*args):
+                self.assertEqual(len(args), 5)
                 self.assertNotIn("全部活动明细", args[2])
-            mailer.send.side_effect = verify_summary_only
+                self.assertEqual(args[4].name, "志愿服务证明.pdf")
+                with pymupdf.open(args[4]) as certificate:
+                    self.assertEqual(len(certificate), 1)
+                    self.assertEqual(certificate[0].get_text(), "")
+                    self.assertEqual(len(certificate[0].get_images()), 1)
+            mailer.send.side_effect = verify_certificate
             self.assertEqual(processor.run(submission)["status"], "success")
             self.assertEqual(processor.run(submission)["status"], "duplicate")
             self.assertEqual(list(Path(folder).iterdir()), [])
@@ -199,6 +206,62 @@ class PipelineTests(unittest.TestCase):
             _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
             self.assertEqual(len(rows), 2)
             self.assertEqual(list(Path(folder).iterdir()), [])
+
+    def test_certificate_retry_reuses_original_html_and_issue_date(self):
+        store = CosStore(FakeCos(), "bucket")
+        downloader, mailer = FakeDownloader(), Mock()
+        zone = timezone(timedelta(hours=8))
+        clock = Mock(side_effect=[datetime(2026, 11, 8, 23, 59, tzinfo=zone),
+                                  datetime(2026, 11, 9, 12, tzinfo=zone)])
+        certificates = []
+
+        def send(*args):
+            with pymupdf.open(args[4]) as certificate:
+                certificates.append(certificate[0].get_pixmap().samples)
+            if len(certificates) == 1:
+                raise RuntimeError("simulated smtp failure")
+
+        mailer.send.side_effect = send
+        with tempfile.TemporaryDirectory() as folder:
+            cfg = replace(Settings(), cos_bucket="bucket", temp_root=folder)
+            processor = Processor(cfg, store, downloader=downloader, mailer=mailer, clock=clock)
+            submission = parse_submission(form(), cfg)
+            from yearly.service import write_certificate
+            with patch("yearly.service.write_certificate", wraps=write_certificate) as render:
+                with self.assertRaises(RuntimeError):
+                    processor.run(submission)
+                self.assertEqual(processor.run(submission)["status"], "success")
+                self.assertEqual(render.call_args_list[0].args[:2], render.call_args_list[1].args[:2])
+                self.assertEqual(render.call_args.args[1], date(2026, 11, 8))
+            self.assertEqual(certificates[0], certificates[1])
+            self.assertEqual(list(Path(folder).iterdir()), [])
+            self.assertEqual(processor.run(submission)["status"], "duplicate")
+        clock.assert_called_once()
+        self.assertEqual(downloader.calls, 1)
+        mailer.failure.assert_not_called()
+        _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
+        self.assertEqual(len(rows), 2)
+
+    def test_certificate_render_failure_can_resume_without_duplicate_summary(self):
+        store = CosStore(FakeCos(), "bucket")
+        downloader, mailer = FakeDownloader(), Mock()
+        with tempfile.TemporaryDirectory() as folder:
+            cfg = replace(Settings(), cos_bucket="bucket", temp_root=folder)
+            processor = Processor(cfg, store, downloader=downloader, mailer=mailer)
+            submission = parse_submission(form(), cfg)
+            with patch("yearly.service.write_certificate", side_effect=RuntimeError("simulated render failure")):
+                with self.assertRaises(RuntimeError):
+                    processor.run(submission)
+            mailer.send.assert_not_called()
+            mailer.failure.assert_not_called()
+            self.assertEqual(list(Path(folder).iterdir()), [])
+            self.assertEqual(processor.run(submission)["status"], "success")
+            self.assertEqual(list(Path(folder).iterdir()), [])
+            self.assertEqual(processor.run(submission)["status"], "duplicate")
+        mailer.send.assert_called_once()
+        self.assertEqual(downloader.calls, 1)
+        _, rows = SummaryCSV(store, cfg.summary_key, 2025)._read()
+        self.assertEqual(len(rows), 2)
 
     def test_new_submission_by_same_student_adds_another_row(self):
         store = CosStore(FakeCos(), "bucket")

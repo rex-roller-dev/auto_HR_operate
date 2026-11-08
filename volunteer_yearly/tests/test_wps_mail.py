@@ -102,3 +102,20 @@ class MailTests(unittest.TestCase):
             Mailer().send(student(), "测试", "正文")
         factory.assert_called_once()
         server.send_message.assert_called_once()
+
+    def test_pdf_attachment_keeps_filename_bytes_and_pdf_mime(self):
+        primary, backup = Mock(), Mock()
+        primary.login.side_effect = smtplib.SMTPAuthenticationError(535, b"test")
+        backup.send_message.return_value = {}
+        payload = b"%PDF-1.7\nimage-only-certificate"
+        with tempfile.TemporaryDirectory() as folder, self.config(), patch("yearly.mailer.smtplib.SMTP_SSL", side_effect=[primary, backup]):
+            path = Path(folder) / "志愿服务证明.pdf"
+            path.write_bytes(payload)
+            Mailer().send(student(), "测试", "正文", "<p>正文</p>", path)
+        message = backup.send_message.call_args.args[0]
+        attachments = list(message.iter_attachments())
+        self.assertEqual(len(attachments), 1)
+        self.assertEqual(attachments[0].get_content_type(), "application/pdf")
+        self.assertEqual(attachments[0].get_filename(), "志愿服务证明.pdf")
+        self.assertEqual(attachments[0].get_payload(decode=True), payload)
+        self.assertIn("backup@example.com", message["From"])

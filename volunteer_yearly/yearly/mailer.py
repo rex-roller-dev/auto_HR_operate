@@ -1,5 +1,6 @@
 from email.message import EmailMessage
 from email.utils import formataddr, formatdate
+import mimetypes
 import os
 from pathlib import Path
 import smtplib
@@ -31,8 +32,9 @@ class Mailer:
                 msg.add_alternative(html, subtype="html")
             if attachment:
                 path = Path(attachment)
-                msg.add_attachment(path.read_bytes(), maintype="application",
-                                   subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=path.name)
+                content_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+                maintype, subtype = content_type.split("/", 1)
+                msg.add_attachment(path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name)
             server = None
             accepted = False
             try:

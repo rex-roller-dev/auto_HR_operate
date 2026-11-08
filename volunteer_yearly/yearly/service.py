@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 
 from .cosio import CosLease, CosStore, SummaryCSV, client_from_env
+from .certificate import write_certificate
 from .forms import normalized
 from .mailer import Mailer
 from .models import UserError, ServiceError, aggregate, SZ, IV
@@ -83,9 +84,13 @@ class Processor:
                 summary.append_once(manifest["row"], submission.event_id)
                 sent_key = base + "/sent.json"
                 if self.store.json(sent_key) is None:
+                    issued_at = datetime.fromisoformat(manifest["row"][-1])
+                    if issued_at.tzinfo is not None:
+                        issued_at = issued_at.astimezone(SHANGHAI)
+                    attachment = write_certificate(manifest["html"], issued_at.date(), work / "志愿服务证明.pdf")
                     lease.assert_owned()
                     self.mailer.send(submission, f"{cfg.label}学年志愿服务统计结果",
-                                     manifest["plain"], manifest["html"])
+                                     manifest["plain"], manifest["html"], attachment)
                     self.store.put(sent_key, b'{"smtp_accepted":true}', "application/json")
                 lease.finish("done", "success")
                 return {"status": "success"}
