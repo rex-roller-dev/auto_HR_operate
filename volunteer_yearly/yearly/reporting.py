@@ -24,11 +24,8 @@ def write_xlsx(report, destination):
     summary.append(["评选学年", year_label(report.evaluation_year), "统计截止日", report.as_of.isoformat()])
     summary.append(["统计口径", "按活动结束日期归属学年；核定时长全额计入；i志愿始终排除志愿深圳来源；不计培训时长"])
     summary.append(["学年", "起始日期", "结束日期", "志愿深圳（小时）", "i志愿（小时）", "合计（小时）", "说明"])
-    years = sorted(set(report.totals) | set(range(report.evaluation_year - 3, report.evaluation_year + 1)))
+    years = sorted(set(report.totals) | set(report.recent_years))
     for year in years:
-        if year < report.submission.enrollment:
-            summary.append([year_label(year), f"{year}-09-01", f"{year+1}-08-31", "未入学", "未入学", "未入学", "早于入学学年"])
-            continue
         total = report.totals.get(year)
         finish = min(report.as_of.isoformat(), f"{year+1}-08-31")
         summary.append([
@@ -39,7 +36,7 @@ def write_xlsx(report, destination):
             "评选学年" if year == report.evaluation_year else "",
         ])
     grand = sum((y.total for y in report.totals.values()), Decimal(0))
-    summary.append(["入学至截止日合计", "", "", "", "", float(grand / 60)])
+    summary.append(["有日期的有效时长合计", "", "", "", "", float(grand / 60)])
     for row in summary.iter_rows(min_row=5):
         for cell in row[3:6]:
             if cell.data_type == "n":
@@ -65,7 +62,6 @@ def write_xlsx(report, destination):
         ["精度", "内部用Decimal分钟累加，汇总显示两位小数；明细保留更多小数以便复核。"],
         ["去重", "志愿深圳按考勤编号识别重复；i志愿按活动名称、日期、来源与时长识别完全重复记录。"],
         ["来源排除", "无论是否上传志愿深圳PDF，i志愿中来源含“志愿深圳”的记录均不计入。"],
-        ["未入学", "早于学号前四位所对应入学学年的记录不计入，评选汇总单元格标记“未入学”。"],
         ["明细", "被排除的记录仍保留，注明原因；原PDF中的联系人、手机号、证件号码不进入统计文件。"],
         *[["提示", note] for note in report.warnings],
     ]:
@@ -95,15 +91,13 @@ def email_bodies(report):
     rows = []
     plain = [f"{report.submission.name} 同学，您好：", "", f"评选学年：{year_label(report.evaluation_year)}",
              f"统计截止日期：{report.as_of.isoformat()}", ""]
-    years = range(report.evaluation_year, report.evaluation_year - 10, -1)
-    for index, (year, value) in enumerate(zip(years, report.year_cells(years))):
+    years = report.recent_years
+    for index, (year, value) in enumerate(zip(years, report.evaluation_cells())):
         total_cell = (f'<td rowspan="{len(years)}">{report.material_hours}</td>' if index == 0 else "")
         rows.append(f"<tr><td>{year_label(year)}</td><td>{escape(value)}</td>{total_cell}</tr>")
-        plain.append(f"{year_label(year)}：{value}" + ("" if value == "未入学" else " 小时"))
+        plain.append(f"{year_label(year)}：{value} 小时")
     plain.append(f"材料总时长：{report.material_hours} 小时")
-    note = "表格显示含评选学年在内的最近十个学年，入学前的学年标为“未入学”。材料总时长包含表格范围外及入学前的有效记录。日期完整的记录按活动结束日期统计至截止日（含当天）；日期缺失的记录仅计入材料总时长，并单独提示。两者均排除培训时长、重复记录及i志愿中来自志愿深圳的记录。不生成个人活动明细附件。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
-    if report.submission.enrollment > report.evaluation_year:
-        note = "截至评选学年尚未入学。" + note
+    note = "表格显示含评选学年在内的最近十个学年，无有效记录的学年显示0.00小时。材料总时长包含表格范围外的有效记录。日期完整的记录按活动结束日期统计至截止日（含当天）；日期缺失的记录仅计入材料总时长，并单独提示。两者均排除培训时长、重复记录及i志愿中来自志愿深圳的记录。不生成个人活动明细附件。统计仅基于上传材料，未上传的平台不代表真实时长为0。"
     plain.extend(["", note])
     plain.extend(report.warnings)
     html = (

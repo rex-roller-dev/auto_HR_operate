@@ -35,9 +35,9 @@ class RulesTests(unittest.TestCase):
         report = aggregate(student(), [before, after], 2025, date(2026, 8, 31))
         self.assertEqual(report.material_hours, "3.00")
         self.assertEqual(report.undated_hours, "3.00")
-        self.assertEqual(report.evaluation_cells(), ["0.00", "0.00"])
+        self.assertEqual(report.evaluation_cells(), ["0.00"] * 10)
 
-    def test_graduate_and_undergraduate_share_enrollment_rules(self):
+    def test_graduate_and_undergraduate_share_date_based_totals(self):
         records = [activity("2022-10-01", "2022-10-02", rid="before"),
                    activity("2023-08-31", "2023-09-01", rid="enrolled")]
         undergraduate = replace(student(), student_id="2023123456")
@@ -45,15 +45,15 @@ class RulesTests(unittest.TestCase):
         undergrad_report = aggregate(undergraduate, records, 2025, date(2026, 10, 31))
         grad_report = aggregate(graduate, records, 2025, date(2026, 10, 31))
         self.assertEqual(graduate.enrollment, 2023)
-        self.assertEqual(grad_report.evaluation_cells(), ["0.00", "0.00", "4.00"])
+        self.assertEqual(grad_report.evaluation_cells(), ["0.00", "0.00", "4.00", "4.00"] + ["0.00"] * 6)
         self.assertEqual(grad_report.evaluation_cells(), undergrad_report.evaluation_cells())
-        self.assertEqual(grad_report.details[0].reason, "未入学")
+        self.assertTrue(grad_report.details[0].counted)
         self.assertTrue(grad_report.details[1].counted)
 
     def test_september_boundary_uses_end_date_and_counts_once(self):
         report = aggregate(student(), [activity()], 2025, date(2026, 10, 30))
         self.assertEqual(report.totals[2025].total, Decimal(240))
-        self.assertEqual(report.totals[2024].total, 0)
+        self.assertEqual(report.year_cells([2024]), ["0.00"])
 
     def test_august31_belongs_to_previous_school_year(self):
         self.assertEqual(school_year(date(2025, 8, 31)), 2024)
@@ -71,19 +71,18 @@ class RulesTests(unittest.TestCase):
 
     def test_ivol_shenzhen_always_excluded_without_shenzhen_upload(self):
         report = aggregate(student(), [activity(platform=IV, source="志愿 深圳")], 2025, date(2026, 10, 30))
-        self.assertEqual(report.totals[2025].total, 0)
+        self.assertEqual(report.year_cells([2025]), ["0.00"])
         self.assertIn("来源为志愿深圳", report.details[0].reason)
 
-    def test_no_enrollment_is_different_from_zero(self):
+    def test_empty_years_display_zero(self):
         report = aggregate(student(), [], 2025, date(2026, 10, 30))
-        self.assertEqual(report.evaluation_cells(), ["0.00", "0.00"])
-        self.assertEqual(report.year_cells(range(2025, 2021, -1)), ["0.00", "0.00", "未入学", "未入学"])
+        self.assertEqual(report.evaluation_cells(), ["0.00"] * 10)
 
-    def test_enrollment_history_is_not_limited_to_four_years(self):
-        report = aggregate(student("2020"), [activity("2020-09-01", "2020-09-02", "2.25")],
+    def test_recent_years_include_the_tenth_academic_year(self):
+        report = aggregate(student(), [activity("2016-09-01", "2016-09-02", "2.25")],
                            2025, date(2026, 8, 31))
-        self.assertEqual(list(report.enrollment_years), [2025, 2024, 2023, 2022, 2021, 2020])
-        self.assertEqual(report.evaluation_cells(), ["0.00"] * 5 + ["2.25"])
+        self.assertEqual(list(report.recent_years), list(range(2025, 2015, -1)))
+        self.assertEqual(report.evaluation_cells(), ["0.00"] * 9 + ["2.25"])
 
     def test_material_total_ignores_enrollment_but_keeps_all_other_exclusions(self):
         before = activity("2020-10-01", "2020-10-02", "1.25", rid="before")
@@ -101,18 +100,19 @@ class RulesTests(unittest.TestCase):
                 self.assertEqual(report.material_minutes, Decimal(450))
                 self.assertEqual(report.material_hours, "7.50")
         report = aggregate(student("2023"), records, 2025, date(2026, 8, 31))
-        self.assertEqual(report.evaluation_cells(), ["3.50", "2.25", "0.00"])
-        self.assertEqual(report.details[0].reason, "未入学")
+        self.assertEqual(report.evaluation_cells(),
+                         ["3.50", "2.25", "0.00", "0.50", "0.00", "1.25"] + ["0.00"] * 4)
+        self.assertTrue(report.details[0].counted)
 
     def test_material_minutes_are_summed_before_rounding(self):
         records = [replace(activity(rid=str(i)), minutes=Decimal(1)) for i in range(3)]
         report = aggregate(student(), records, 2025, date(2026, 8, 31))
         self.assertEqual(report.material_hours, "0.05")
 
-    def test_before_enrollment_records_retained_but_excluded(self):
+    def test_activity_before_enrollment_counts_by_date(self):
         report = aggregate(student(), [activity("2023-10-01", "2023-10-02")], 2025, date(2026, 10, 30))
-        self.assertEqual(report.details[0].reason, "未入学")
-        self.assertEqual(sum(y.total for y in report.totals.values()), 0)
+        self.assertTrue(report.details[0].counted)
+        self.assertEqual(report.year_cells([2023]), ["4.00"])
 
     def test_future_records_not_counted(self):
         report = aggregate(student(), [activity("2026-10-30", "2026-10-31")], 2025, date(2026, 10, 30))

@@ -111,7 +111,7 @@ class PipelineTests(unittest.TestCase):
             legacy_key = f"{cfg.cos_prefix}/summaries/{cfg.label}-summary.csv"
             store.put(legacy_key, b"legacy archive", "text/csv")
             data = form()
-            data["answerContents"][3]["value"] = "2014123456"
+            data["answerContents"][3]["value"] = "2024123456"
             data["answerContents"][4]["value"] = [{"fileName": "sz.pdf", "fileId": "sz-file"}]
             processor = Processor(cfg, store, downloader=downloader, mailer=mailer)
             with patch("yearly.service.parse_pdf", side_effect=[ParsedPDF(sz_records), ParsedPDF(iv_records)]):
@@ -126,13 +126,14 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(row[header.index("2015-2016学年义工时（小时）")], "6.00")
         self.assertEqual(row[header.index("2020-2021学年义工时（小时）")], "3.00")
         self.assertEqual(row[header.index("2025-2026学年义工时（小时）")], "4.00")
-        self.assertEqual(row[header.index("2013-2014学年义工时（小时）")], "未入学")
+        self.assertEqual(row[header.index("2013-2014学年义工时（小时）")], "2.00")
         self.assertEqual(downloader.calls, 2)
         mailer.send.assert_called_once()
         self.assertEqual(len(mailer.send.call_args.args), 5)
         plain, html = mailer.send.call_args.args[2:4]
         self.assertIn("材料总时长：15.00 小时", plain)
         self.assertIn("<td>2016-2017</td>", html)
+        self.assertIn("<td>2020-2021</td><td>3.00</td>", html)
         self.assertNotIn("2015-2016", plain)
         self.assertNotIn("2015-2016", html)
         self.assertIn('<td rowspan="10">15.00</td>', html)
@@ -189,7 +190,7 @@ class PipelineTests(unittest.TestCase):
         self.assertFalse(any(key.endswith(".xlsx") for _, key in store.client.data))
         content = store.read(cfg.summary_key).decode("utf-8-sig")
         self.assertIn("8.18", content)
-        self.assertIn("未入学", content)
+        self.assertNotIn("未入学", content)
 
     def test_retry_after_smtp_failure_reuses_prepared_report_without_extra_row(self):
         store = CosStore(FakeCos(), "bucket")

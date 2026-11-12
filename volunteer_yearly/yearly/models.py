@@ -133,8 +133,8 @@ class Report:
     undated_count: int = 0
 
     @property
-    def enrollment_years(self):
-        return range(self.evaluation_year, self.submission.enrollment - 1, -1)
+    def recent_years(self):
+        return range(self.evaluation_year, self.evaluation_year - 10, -1)
 
     @property
     def material_hours(self):
@@ -146,20 +146,16 @@ class Report:
 
     def year_cells(self, years):
         return [
-            "未入学" if year < self.submission.enrollment
-            else hours_text(self.totals.get(year, YearTotal(year)).total)
+            hours_text(self.totals.get(year, YearTotal(year)).total)
             for year in years
         ]
 
     def evaluation_cells(self):
-        return self.year_cells(self.enrollment_years)
+        return self.year_cells(self.recent_years)
 
 
 def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
-    totals = {
-        y: YearTotal(y)
-        for y in range(submission.enrollment, school_year(as_of) + 1)
-    }
+    totals = {}
     details = []
     seen = {}
     material_minutes = Decimal(0)
@@ -191,8 +187,6 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
             undated_minutes += activity.minutes
             undated_count += 1
             reason = "活动日期缺失或不完整，仅计入材料总时长"
-        if not reason and activity.year < submission.enrollment:
-            reason = "未入学"
         details.append(Detail(activity, reason))
         if not reason:
             total = totals.setdefault(activity.year, YearTotal(activity.year))
