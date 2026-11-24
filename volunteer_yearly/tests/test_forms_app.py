@@ -58,8 +58,9 @@ class FormTests(unittest.TestCase):
             parse_submission(data, Settings())
 
     def test_undergraduate_and_graduate_enrollment(self):
-        for student_id, year in (("2023123456", 2023), ("2024123456", 2024),
+        for student_id, year in (("2010123456", 2010), ("2023123456", 2023), ("2024123456", 2024),
                                  ("2300123456", 2023), ("2400123456", 2024),
+                                 ("2410123456", 2024), ("2510123456", 2025),
                                  ("2000123456", 2020), ("0000123456", 2000),
                                  ("2600123456", 2026)):
             data = form()
@@ -72,7 +73,7 @@ class FormTests(unittest.TestCase):
     def test_invalid_student_formats_and_future_years(self):
         for student_id in ("2300", "23001", "2300" + "1" * 17,
                            "2300abc123", "23 00123456", "2312123456",
-                           "2027123456", "2700123456", "9900123456"):
+                           "2027123456", "2700123456", "2710123456", "9900123456"):
             data = form()
             data["answerContents"][3]["value"] = student_id
             with self.subTest(student_id=student_id), self.assertRaises(UserError):
@@ -163,12 +164,15 @@ class AppTests(unittest.TestCase):
         self.processor.run.assert_called_once()
 
     def test_graduate_callback_is_accepted_with_correct_enrollment(self):
-        data = form()
-        data["answerContents"][3]["value"] = "2300123456"
-        response = self.client.post("/event-invoke", json=data)
-        self.assertEqual(response.status_code, 200)
-        self.processor.run.assert_called_once()
-        self.assertEqual(self.processor.run.call_args.args[0].enrollment, 2023)
+        for student_id, year in (("2300123456", 2023), ("2510123456", 2025)):
+            with self.subTest(student_id=student_id):
+                data = form()
+                data["answerContents"][3]["value"] = student_id
+                self.processor.run.reset_mock()
+                response = self.client.post("/event-invoke", json=data)
+                self.assertEqual(response.status_code, 200)
+                self.processor.run.assert_called_once()
+                self.assertEqual(self.processor.run.call_args.args[0].enrollment, year)
 
     def test_secret_and_malformed_body(self):
         app = create_app(replace(Settings(), callback_secret="expected"))

@@ -28,14 +28,15 @@ def hours_text(minutes: Decimal) -> str:
 
 
 def enrollment_year(student_id: str) -> int:
-    """研究生学号以xx00开头，本科生学号以四位入学年份开头。"""
+    """支持四位入学年份以及 xx00、xx10 两种学号前缀。"""
     if not re.fullmatch(r"[0-9]{6,20}", student_id):
-        raise UserError("学号应为6至20位纯数字；本科生以四位入学年份开头，研究生以两位年份加00开头")
-    if student_id[2:4] == "00":
+        raise UserError("学号应为6至20位纯数字，前缀应为四位入学年份、xx00 或 xx10")
+    # 保留已有的四位年份解释，例如 2010 开头仍对应 2010 年。
+    if student_id.startswith("20") and student_id[2:4] != "00":
+        return int(student_id[:4])
+    if student_id[2:4] in ("00", "10"):
         return 2000 + int(student_id[:2])
-    if not student_id.startswith("20"):
-        raise UserError("学号格式无效：本科生以四位入学年份开头，研究生以两位年份加00开头")
-    return int(student_id[:4])
+    raise UserError("学号格式无效，前缀应为四位入学年份、xx00 或 xx10")
 
 
 @dataclass(frozen=True)
