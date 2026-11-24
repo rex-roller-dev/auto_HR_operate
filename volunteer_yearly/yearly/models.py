@@ -163,6 +163,9 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
     undated_minutes = Decimal(0)
     undated_count = 0
     for activity in activities:
+        if activity.platform == IV and SZ in re.sub(r"\s+", "", activity.source):
+            details.append(Detail(activity, "i志愿来源为志愿深圳，按规则排除"))
+            continue
         reason = ""
         if activity.minutes < 0 or not activity.minutes.is_finite() or (
             activity.has_complete_dates and activity.end < activity.begin
@@ -176,8 +179,6 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
             reason = "重复记录"
         else:
             seen[activity.identity] = (activity.begin, activity.end, activity.minutes, activity.kind)
-        if not reason and activity.platform == IV and "志愿深圳" in re.sub(r"\s+", "", activity.source):
-            reason = "i志愿来源为志愿深圳，按规则排除"
         if not reason and activity.kind == "培训时长":
             reason = "培训时长不计入服务时长"
         if not reason and any(day.date() > as_of for day in (activity.begin, activity.end) if day is not None):

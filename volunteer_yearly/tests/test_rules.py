@@ -74,6 +74,14 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(report.year_cells([2025]), ["0.00"])
         self.assertIn("来源为志愿深圳", report.details[0].reason)
 
+    def test_ivol_shenzhen_with_reversed_dates_does_not_block_statistics(self):
+        imported = activity("2025-10-02", "2025-10-01", "10", platform=IV, source="志愿 深圳")
+        report = aggregate(student(), [imported, activity()], 2025, date(2026, 10, 30))
+        self.assertEqual(report.year_cells([2025]), ["4.00"])
+        self.assertEqual(report.material_hours, "4.00")
+        self.assertFalse(report.details[0].counted)
+        self.assertIn("来源为志愿深圳", report.details[0].reason)
+
     def test_empty_years_display_zero(self):
         report = aggregate(student(), [], 2025, date(2026, 10, 30))
         self.assertEqual(report.evaluation_cells(), ["0.00"] * 10)
@@ -149,5 +157,7 @@ class RulesTests(unittest.TestCase):
                 duration_minutes(bad)
 
     def test_invalid_order_fails(self):
-        with self.assertRaises(UserError):
-            aggregate(student(), [activity("2025-10-02", "2025-10-01")], 2025, date(2026, 10, 30))
+        for platform in (SZ, IV):
+            with self.subTest(platform=platform), self.assertRaises(UserError):
+                invalid = activity("2025-10-02", "2025-10-01", platform=platform)
+                aggregate(student(), [invalid], 2025, date(2026, 10, 30))
