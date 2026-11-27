@@ -20,8 +20,12 @@ class CertificateTests(unittest.TestCase):
         report = aggregate(student(), [
             activity(rid="dated"),
             replace(activity(rid="undated"), begin=None, end=None),
+            activity("2025-10-02", "2025-10-01", "3.25", rid="reversed"),
         ], 2025, date(2026, 8, 31))
-        _, html = email_bodies(report)
+        plain, html = email_bodies(report)
+        for body in (plain, html):
+            self.assertIn("结束时间早于开始时间", body)
+            self.assertIn("3.25 小时", body)
         text, pixels = [], []
         def capture(html, issued_on):
             data = _render_template(html, issued_on)
@@ -59,7 +63,8 @@ class CertificateTests(unittest.TestCase):
         compact = "".join(drawn.split())
         for value in (report.submission.name, "志愿时服务认证", "2025-2026", "2016-2017",
                       "2026-08-31", "8.00", "4.00", "缺少完整活动日期",
-                      "未计入任何学年", "深圳大学志愿者联合会", "2026年11月8日"):
+                      "未计入任何学年", "结束时间早于开始时间", "3.25小时", "已从材料总时长和各学年时长中排除",
+                      "深圳大学志愿者联合会", "2026年11月8日"):
             self.assertIn(value, compact)
         self.assertNotIn("xx", drawn)
         self.assertNotIn("X 月", drawn)

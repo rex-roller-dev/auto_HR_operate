@@ -162,15 +162,20 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
     material_minutes = Decimal(0)
     undated_minutes = Decimal(0)
     undated_count = 0
+    reversed_minutes = Decimal(0)
+    reversed_count = 0
     for activity in activities:
         if activity.platform == IV and SZ in re.sub(r"\s+", "", activity.source):
             details.append(Detail(activity, "i志愿来源为志愿深圳，按规则排除"))
             continue
+        if not activity.minutes.is_finite() or activity.minutes < 0:
+            raise UserError("PDF存在核定时长无效的活动记录")
+        if activity.has_complete_dates and activity.end < activity.begin:
+            details.append(Detail(activity, "活动结束时间早于开始时间"))
+            reversed_minutes += activity.minutes
+            reversed_count += 1
+            continue
         reason = ""
-        if activity.minutes < 0 or not activity.minutes.is_finite() or (
-            activity.has_complete_dates and activity.end < activity.begin
-        ):
-            raise UserError("PDF存在日期或核定时长无效的活动记录")
         previous = seen.get(activity.identity)
         if previous:
             # 考勤编号相同却内容不同，不能擅自决定采用哪一份。
@@ -197,6 +202,12 @@ def aggregate(submission, activities, evaluation_year, as_of, warnings=None):
             else:
                 total.ivolunteer += activity.minutes
     notes = list(warnings or [])
+    if reversed_count:
+        notes.append(
+            f"上传材料中有 {reversed_count} 条活动记录的结束时间早于开始时间。"
+            f"这些记录原核定时长合计 {hours_text(reversed_minutes)} 小时，已从材料总时长和各学年时长中排除。"
+            "请联系活动负责人核对原平台记录。"
+        )
     if undated_count:
         notes.append(
             f"您有 {hours_text(undated_minutes)} 小时志愿服务记录（{undated_count}条）缺少完整活动日期，"

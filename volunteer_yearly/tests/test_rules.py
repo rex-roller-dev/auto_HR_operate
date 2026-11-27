@@ -156,8 +156,16 @@ class RulesTests(unittest.TestCase):
             with self.subTest(value=bad), self.assertRaises(UserError):
                 duration_minutes(bad)
 
-    def test_invalid_order_fails(self):
+    def test_reversed_dates_exclude_only_affected_records(self):
         for platform in (SZ, IV):
-            with self.subTest(platform=platform), self.assertRaises(UserError):
-                invalid = activity("2025-10-02", "2025-10-01", platform=platform)
-                aggregate(student(), [invalid], 2025, date(2026, 10, 30))
+            with self.subTest(platform=platform):
+                invalid = activity("2025-10-02", "2025-10-01", "9", platform=platform, rid="invalid")
+                valid = activity("2025-10-01", "2025-10-01", "2", platform=platform, rid="valid")
+                report = aggregate(student(), [invalid, valid], 2025, date(2026, 8, 31))
+                self.assertEqual(report.material_hours, "2.00")
+                self.assertEqual(report.year_cells([2025]), ["2.00"])
+                self.assertEqual(report.details[0].reason, "活动结束时间早于开始时间")
+                self.assertFalse(report.details[0].counted)
+                self.assertTrue(report.details[1].counted)
+                self.assertIn("有 1 条", report.warnings[0])
+                self.assertIn("9.00 小时", report.warnings[0])
